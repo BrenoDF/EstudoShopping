@@ -14,8 +14,10 @@ st.set_page_config(layout="wide",
 
 hoje = date.today()
 
+emp = st.sidebar.radio(    "Selecione o Empreendimento",
+    options=['Viashopping', 'Viabrasil'], index = 0)
 
-ResumoLojas, DesempenhoMes, DF_Fluxo_Mensal, DF_ApenasLojas_main = ProcTab.TabelaOriginal()
+ResumoLojas, DesempenhoMes, DF_Fluxo_Mensal, DF_ApenasLojas_main = ProcTab.TabelaOriginal(emp)
 
 
 #Título
