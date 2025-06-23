@@ -17,7 +17,7 @@ hoje = date.today()
 hoje = hoje.replace(day=1)
 
 
-st.sidebar.image(r'G:\Meu Drive\Breno-Bruno\Streamlit\PythonProj\Imagens\NAVA preta (2).png')
+st.sidebar.image(r'Imagens/NAVA preta (2).png')
 st.sidebar.header('Filtros')
 Empreendimento = st.sidebar.radio(
    "Empreendimento", ['ViaShopping', 'ViaBrasil']
