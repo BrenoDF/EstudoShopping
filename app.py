@@ -57,7 +57,7 @@ inicio = pd.to_datetime(inicio)
 fim = pd.to_datetime(fim)
 
 
-##############   TABELAS -----------#######################
+##############   TABELAS    #######################
 ##VENDAS TOTAIS
 
 

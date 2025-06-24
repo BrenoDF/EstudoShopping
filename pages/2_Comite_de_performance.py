@@ -8,24 +8,21 @@ from dateutil.relativedelta import relativedelta
 
 st.set_page_config(layout="wide",
 page_title= 'Comitê de Performance')
+st.sidebar.image(r'Imagens/NAVA-preta.png')
 
-ResumoLojas, DesempenhoMes, DF_Fluxo, DF_ApenasLojas = ProcTab.TabelaOriginal()
+st.sidebar.header('Filtros')
+emp = st.sidebar.radio(    "Selecione o Empreendimento",
+    options=['Viashopping', 'Viabrasil'], index = 0)
 
-
+ResumoLojas, DesempenhoMes, DF_Fluxo, DF_ApenasLojas = ProcTab.TabelaOriginal(emp)
 
 hoje = date.today()
 hoje = hoje.replace(day=1)
 
-
-st.sidebar.image(r'Imagens/NAVA preta (2).png')
-st.sidebar.header('Filtros')
-Empreendimento = st.sidebar.radio(
-   "Empreendimento", ['ViaShopping', 'ViaBrasil']
-)
 sliderIntervalo = st.sidebar.date_input("Período",
-                     value = (hoje - pd.DateOffset(months=2),hoje - pd.DateOffset(months=1)),
+                     value = (date(2025,1,1),DF_ApenasLojas['Data'].max()),
                      min_value=date(2018,1,1),
-                     max_value=hoje - pd.DateOffset(months=1),
+                     max_value=DF_ApenasLojas['Data'].max(),
                      format= "DD/MM/YYYY"
 )
 inicio, fim = sliderIntervalo
@@ -36,17 +33,20 @@ fim = pd.to_datetime(fim)
 segmentosUnicos = DF_ApenasLojas['Segmento'].unique().tolist()
 segmentoInutil = ['Comodato', 'Depósito']
 default = [x for x in segmentosUnicos if x not in segmentoInutil]
+
 SegmentosSelecionados = st.sidebar.pills(
         'Selecione os segmentos que deseja visualizar',
     options=segmentosUnicos,
     selection_mode= 'multi',
     default= default
 )
+
 LadoSelecionado = st.sidebar.segmented_control(
     'Lado:',
     options = ['Lado A', 'Lado B', 'Ambos'],
     default = 'Ambos'
 )
+
 PisosSelecionados = st.sidebar.pills(
     'Selecione os pisos que deseja visualizar',
     options = DF_ApenasLojas['Piso'].dropna().unique().tolist(),
@@ -56,35 +56,7 @@ PisosSelecionados = st.sidebar.pills(
 
 
 
-@st.cache_data
-def VendasTotaisComite(DFLojas, Segmento, Lado, Piso, inicio, fim):
-  #Buscando o periodo de Ano Anterior
-  inicio_aa = inicio - relativedelta(years=1)
-  fim_aa    = fim    - relativedelta(years=1)
-
-  #Filtrando pelo sidebar
-  filtroSideBar = ((DFLojas['Segmento'].isin(Segmento)) &
-      (DFLojas['Piso'].isin(Piso)) &
-      ((Lado == 'Ambos')
-       |
-       (DFLojas['Lado']==Lado)
-       ))
-  #Aplicando os filtros
-  filtroDataSelecionada = (DFLojas['Data'] >= inicio) & (DFLojas['Data'] <= fim)
-  filtroDataSelecionada_AA = (DFLojas['Data'] >= inicio_aa) & (DFLojas['Data'] <= fim_aa)
-  
-  DFLojasFiltradas = DFLojas.loc[filtroSideBar & filtroDataSelecionada]
-  DFLojasAA = DFLojas.loc[filtroSideBar & filtroDataSelecionada_AA]
-  
-  #Trazendo Mês-a-Mês
-  group_v   = DFLojasFiltradas.groupby('Data')['Venda'].sum()
-  group_aa  = DFLojasAA.groupby('Data')['Venda'].sum()
-  mes_a_mes = pd.DataFrame({'Data':     pd.to_datetime(group_v.index),
-                            'Venda':    group_v.values,
-                            'VendaAA':  group_aa.values})
-  mes_a_mes['Variação'] = round(((mes_a_mes['Venda'] / mes_a_mes['VendaAA']) -1) * 100,2)
-  
-  st.markdown("""
+st.markdown("""
               <style>
         .bloco-de-info {
         display: inline-block;
@@ -173,7 +145,38 @@ def VendasTotaisComite(DFLojas, Segmento, Lado, Piso, inicio, fim):
       """, unsafe_allow_html=True)
 
 
-  col1, col2, col3 = st.columns([0.5,0.1,0.4])
+
+@st.cache_data
+def VendasTotaisComite(DFLojas, Segmento, Lado, Piso, inicio, fim):
+  #Buscando o periodo de Ano Anterior
+  inicio_aa = inicio - relativedelta(years=1)
+  fim_aa    = fim    - relativedelta(years=1)
+
+  #Filtrando pelo sidebar
+  filtroSideBar = ((DFLojas['Segmento'].isin(Segmento)) &
+      (DFLojas['Piso'].isin(Piso)) &
+      ((Lado == 'Ambos')
+       |
+       (DFLojas['Lado']==Lado)
+       ))
+  #Aplicando os filtros
+  filtroDataSelecionada = (DFLojas['Data'] >= inicio) & (DFLojas['Data'] <= fim)
+  filtroDataSelecionada_AA = (DFLojas['Data'] >= inicio_aa) & (DFLojas['Data'] <= fim_aa)
+  
+  DFLojasFiltradas = DFLojas.loc[filtroSideBar & filtroDataSelecionada]
+  DFLojasAA = DFLojas.loc[filtroSideBar & filtroDataSelecionada_AA]
+  
+  #Trazendo Mês-a-Mês
+  group_v   = DFLojasFiltradas.groupby('Data')['Venda'].sum()
+  group_aa  = DFLojasAA.groupby('Data')['Venda'].sum()
+  mes_a_mes = pd.DataFrame({'Data':     pd.to_datetime(group_v.index),
+                            'Venda':    group_v.values,
+                            'VendaAA':  group_aa.values})
+  mes_a_mes['Variação'] = round(((mes_a_mes['Venda'] / mes_a_mes['VendaAA']) -1) * 100,2)
+
+  variacao = (((mes_a_mes['Venda'].sum() / mes_a_mes['VendaAA'].sum()) - 1) * 100).round(2)
+  
+  col1, col2, col3 = st.columns([0.43,0.14,0.43], gap="large")
 
   figVendatotal = px.line(
    mes_a_mes,
@@ -199,13 +202,22 @@ def VendasTotaisComite(DFLojas, Segmento, Lado, Piso, inicio, fim):
           )
 
   with col1:
+    figVendatotal.update_layout(height=450)
     st.plotly_chart(figVendatotal, use_container_width=True)
-
   with col2:
-      variacao = (((mes_a_mes['Venda'].sum() / mes_a_mes['VendaAA'].sum()) - 1) * 100).round(2)
-      classe = "positive" if variacao >= 0 else "negative"
-      st.markdown(f'<div class="bloco-de-info"><h3>Variação</h3><p class = {classe}>{variacao}%</p></div>', unsafe_allow_html=True)
-      st.markdown(f'<div class="bloco-de-info"><h3>Vendas Totais</h3><p>{round(mes_a_mes['Venda'].sum()/1000000,2)}M</p></div>', unsafe_allow_html=True)
+    st.metric(label="Vendas Totais",
+                value=f"{round(mes_a_mes['Venda'].sum()/1000000,2)}M",
+                delta=f"{round(variacao,2)}%",
+                width="content",
+                border= True)
+    st.metric(label="Vendas Ano Anterior",
+                value=f"{round(mes_a_mes['VendaAA'].sum()/1000000,2)}M",
+                width="content",
+                border= True)
+    st.metric(label="Operações Ativas", value=f"{len(DFLojasFiltradas['ID'].unique())} un.",
+                width="stretch",
+                border= True
+                )
 
   with col3:
       DF_ApenasLojasSegmentos = (
@@ -219,7 +231,7 @@ def VendasTotaisComite(DFLojas, Segmento, Lado, Piso, inicio, fim):
           y='Segmento',
           orientation='h'
       )
-
+      fig.update_layout(height=450)
       st.plotly_chart(fig, use_container_width=True)
 
   regras = {
@@ -287,7 +299,11 @@ def VendasTotaisComite(DFLojas, Segmento, Lado, Piso, inicio, fim):
   for i in range(len(criticoFinal)):
       fluxograma.node(f'{i+5}', criticoFinal['ID'].iloc[i])
       fluxograma.edge('4', f'{i+5}')
-  st.graphviz_chart(fluxograma)
+  st.header('Lojas Críticas')
+  
+  colx, coly, colz = st.columns([0.15, 0.7, 0.15], gap="large")
+  with coly:
+    st.graphviz_chart(fluxograma, use_container_width=True)
 
   st.dataframe(criticoFinal.iloc[:,:-3].reset_index(drop=True), use_container_width=True, hide_index=True)
 
