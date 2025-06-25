@@ -159,7 +159,6 @@ st.markdown("""
 st.title("Relatório de Performance - Grupo NA:blue[v]A")
 st.header("Vendas Totais")
 
-
 @st.cache_data
 def VendasTotaisComite(DFLojas, Segmento, Lado, Piso, inicio, fim, sss):
   #Buscando o periodo de Ano Anterior
@@ -256,13 +255,25 @@ def VendasTotaisComite(DFLojas, Segmento, Lado, Piso, inicio, fim, sss):
       DF_ApenasLojasSegmentos = (
       DFLojasAtual.groupby(['Data', 'Segmento'], as_index=False)
         [['Venda','VendaAA']]
-        .sum().sort_values(by='Venda', ascending=True)
+        .sum().sort_values(by=['Data', 'Venda'], ascending=True)
         )
+      
+      DF_ApenasLojasSegmentos['Variacao'] = round((DF_ApenasLojasSegmentos['Venda'] / DF_ApenasLojasSegmentos['VendaAA'] - 1)*100,2)
+      DF_ApenasLojasSegmentos['Variacao'] = DF_ApenasLojasSegmentos['Variacao'].apply(lambda x: f"{x:.2f}%" if x >= 0 else f"{x:.2f}%")
+      
+      DF_ApenasLojasSegmentos['Data'] = DF_ApenasLojasSegmentos['Data'].dt.strftime('%m/%Y')
+      
+      ordem = DF_ApenasLojasSegmentos.groupby('Segmento')['Venda'].sum().sort_values(ascending=False).index.tolist()
+
       fig = px.bar(
           DF_ApenasLojasSegmentos,
           x='Venda',
           y='Segmento',
-          orientation='h'
+          orientation='h',
+          hover_data=['VendaAA', 'Variacao', 'Data'],
+          color='Segmento',
+          color_discrete_sequence=px.colors.sequential.Blues[::-1]
+          
       )
       fig.update_layout(height=450)
       st.plotly_chart(fig, use_container_width=True)
