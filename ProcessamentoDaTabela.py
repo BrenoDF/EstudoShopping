@@ -85,18 +85,18 @@ def TabelaOriginal(emp):
 
 
 # ------- TABELA DO MÊS ----- #
-    DesempenhoMes = CompClassPosVs[['Data', 'Venda']].groupby('Data').sum()
-    DesempenhoMes = DesempenhoMes.reset_index()
-    DesempenhoMes['VendaAA'] = DesempenhoMes['Venda'].shift(12)
-    DesempenhoMes = DesempenhoMes[['Data', 'VendaAA', 'Venda']]
-    DesempenhoMes['% Venda AA'] = [((x/y)-1)*100 for x, y in zip(DesempenhoMes['Venda'], DesempenhoMes['VendaAA'])]
-    DesempenhoMes['% Venda AA - Mes Anterior'] = DesempenhoMes['% Venda AA'].shift(1)
-    DesempenhoMes['Desempenho do Mês'] = [x-y for x, y in zip(DesempenhoMes['% Venda AA'], DesempenhoMes['% Venda AA - Mes Anterior'])]
-    DesempenhoMes = DesempenhoMes.merge(DF_Fluxo, on = 'Data', how = 'left')
-    DesempenhoMes['Faturamento por Pessoa'] = [round((x/y), 2) if y!=0 else np.nan for x, y in zip(DesempenhoMes['Venda'], DesempenhoMes['Fluxo de Carros'])]
+    # DesempenhoMes = CompClassPosVs[['Data', 'Venda']].groupby('Data').sum()
+    # DesempenhoMes = DesempenhoMes.reset_index()
+    # DesempenhoMes['VendaAA'] = DesempenhoMes['Venda'].shift(12)
+    # DesempenhoMes = DesempenhoMes[['Data', 'VendaAA', 'Venda']]
+    # DesempenhoMes['% Venda AA'] = [((x/y)-1)*100 for x, y in zip(DesempenhoMes['Venda'], DesempenhoMes['VendaAA'])]
+    # DesempenhoMes['% Venda AA - Mes Anterior'] = DesempenhoMes['% Venda AA'].shift(1)
+    # DesempenhoMes['Desempenho do Mês'] = [x-y for x, y in zip(DesempenhoMes['% Venda AA'], DesempenhoMes['% Venda AA - Mes Anterior'])]
+    # DesempenhoMes = DesempenhoMes.merge(DF_Fluxo, on = 'Data', how = 'left')
+    # DesempenhoMes['Faturamento por Pessoa'] = [round((x/y), 2) if y!=0 else np.nan for x, y in zip(DesempenhoMes['Venda'], DesempenhoMes['Fluxo de Carros'])]
 # ------- FIM DA TABELA DO MÊS ----- #
 
 
 
-    return (CompClassPosVs,DesempenhoMes,DF_Fluxo, DF_ApenasLojas)
+    return (CompClassPosVs,DF_Fluxo, DF_ApenasLojas)
 ##################

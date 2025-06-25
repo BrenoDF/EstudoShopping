@@ -23,7 +23,7 @@ sss = st.sidebar.toggle("Vendas SSS",
     value=False,
     help="Vendas Same Store Sales (Vendas de lojas abertas há mais de 12 meses).")
 
-ResumoLojas, DesempenhoMes, DF_Fluxo, DF_ApenasLojas = ProcTab.TabelaOriginal(emp)
+ResumoLojas, DF_Fluxo, DF_ApenasLojas = ProcTab.TabelaOriginal(emp)
 
 hoje = date.today()
 hoje = hoje.replace(day=1)
@@ -62,7 +62,7 @@ with st.sidebar.expander("Filtros Avançados", expanded=False):
         'Selecione os pisos que deseja visualizar',
         options = DF_ApenasLojas['Piso'].dropna().unique().tolist(),
         selection_mode = 'multi',
-        default = ['Piso 1', 'Piso 2', 'Piso 3', 'Piso 4', 'Piso 5']
+        default = DF_ApenasLojas['Piso'].dropna().unique().tolist()
     )
 
 
@@ -158,31 +158,49 @@ st.markdown("""
 # Bloco 1
 st.title("Relatório de Performance - Grupo NA:blue[v]A")
 st.header("Vendas Totais")
-st.toast("Bem-Vindo!")
 
 
 @st.cache_data
-def VendasTotaisComite(DFLojas, Segmento, Lado, Piso, inicio, fim):
+def VendasTotaisComite(DFLojas, Segmento, Lado, Piso, inicio, fim, sss):
   #Buscando o periodo de Ano Anterior
   inicio_aa = inicio - relativedelta(years=1)
   fim_aa    = fim    - relativedelta(years=1)
 
-  #Filtrando pelo sidebar
+  # Aplicando os Filtros do SideBar
   filtroSideBar = ((DFLojas['Segmento'].isin(Segmento)) &
       (DFLojas['Piso'].isin(Piso)) &
       ((Lado == 'Ambos')
        |
        (DFLojas['Lado']==Lado)
        ))
-  #Aplicando os filtros
+
   filtroDataSelecionada = (DFLojas['Data'] >= inicio) & (DFLojas['Data'] <= fim)
   filtroDataSelecionada_AA = (DFLojas['Data'] >= inicio_aa) & (DFLojas['Data'] <= fim_aa)
   
-  DFLojasFiltradas = DFLojas.loc[filtroSideBar & filtroDataSelecionada]
+  DFLojasAtual = DFLojas.loc[filtroSideBar & filtroDataSelecionada]
   DFLojasAA = DFLojas.loc[filtroSideBar & filtroDataSelecionada_AA]
   
+  ## SSS ##
+  if sss:
+    # depois de gerar DFLojasAtual e DFLojasAA -----------------------------
+
+    for df in (DFLojasAtual, DFLojasAA):
+        df['month'] = df['Data'].dt.month        # 1) mês numérico
+
+    # 2) pares (ID, month) presentes nos dois períodos
+    pares_comuns = (
+        DFLojasAtual[['ID', 'month']].drop_duplicates()
+        .merge(DFLojasAA[['ID', 'month']].drop_duplicates(),
+              on=['ID', 'month'], how='inner')
+    )
+
+    # 3) aplica interseção – agora cada loja só tem meses em que existia nos DOIS anos
+    DFLojasAtual = DFLojasAtual.merge(pares_comuns, on=['ID', 'month'], how='inner')
+    DFLojasAA    = DFLojasAA.merge(pares_comuns, on=['ID', 'month'], how='inner')
+  ## FIM DO SSS ##
+  
   #Trazendo Mês-a-Mês
-  group_v   = DFLojasFiltradas.groupby('Data')['Venda'].sum()
+  group_v   = DFLojasAtual.groupby('Data')['Venda'].sum()
   group_aa  = DFLojasAA.groupby('Data')['Venda'].sum()
   mes_a_mes = pd.DataFrame({'Data':     pd.to_datetime(group_v.index),
                             'Venda':    group_v.values,
@@ -229,14 +247,14 @@ def VendasTotaisComite(DFLojas, Segmento, Lado, Piso, inicio, fim):
                 value=f"{round(mes_a_mes['VendaAA'].sum()/1000000,2)}M",
                 width="content",
                 border= True)
-    st.metric(label="Operações Ativas", value=f"{len(DFLojasFiltradas['ID'].unique())} un.",
+    st.metric(label="Operações Ativas", value=f"{len(DFLojasAtual['ID'].unique())} un.",
                 width="stretch",
                 border= True
                 )
 
   with col3:
       DF_ApenasLojasSegmentos = (
-      DFLojasFiltradas.groupby(['Data', 'Segmento'], as_index=False)
+      DFLojasAtual.groupby(['Data', 'Segmento'], as_index=False)
         [['Venda','VendaAA']]
         .sum().sort_values(by='Venda', ascending=True)
         )
@@ -259,7 +277,7 @@ def VendasTotaisComite(DFLojas, Segmento, Lado, Piso, inicio, fim):
       'Quiosque':15
   }
 
-  CriticoAcumulado = DFLojasFiltradas.groupby(['ID'], as_index=False).agg({
+  CriticoAcumulado = DFLojasAtual.groupby(['ID'], as_index=False).agg({
       'M2': 'last',
       'VendaAA': 'sum',
       'Venda': 'sum',
@@ -409,9 +427,6 @@ def VendasTotaisComite(DFLojas, Segmento, Lado, Piso, inicio, fim):
 
   st.dataframe(EntradaSaida, hide_index=True, use_container_width=True)
 
-  UnicasPeriodo = list(set(DFLojasFiltradas['ID']) - set(DFLojasAA['ID']))
-  UnicasPeriodoAA = list(set(DFLojasAA['ID']) - set(DFLojasFiltradas['ID']))
-
   
 
     # ------------- FIM LOJAS QUE ENTRARAM E SAÍRAM ----------------
@@ -420,7 +435,7 @@ def VendasTotaisComite(DFLojas, Segmento, Lado, Piso, inicio, fim):
 
 
 
-VendasTotaisComite(DF_ApenasLojas, SegmentosSelecionados, LadoSelecionado, PisosSelecionados, inicio, fim)
+VendasTotaisComite(DF_ApenasLojas, SegmentosSelecionados, LadoSelecionado, PisosSelecionados, inicio, fim, sss)
 
 col1, col2, col3 = st.columns([0.4,0.2,0.4])
 inicioF, fimF = sliderIntervalo
