@@ -23,15 +23,15 @@ sss = st.sidebar.toggle("Vendas SSS",
     value=False,
     help="Vendas Same Store Sales (Vendas de lojas abertas há mais de 12 meses).")
 
-ResumoLojas, DF_Fluxo, DF_ApenasLojas = ProcTab.TabelaOriginal(emp)
+ResumoLojas, DF_Fluxo, DFLojas = ProcTab.TabelaOriginal(emp)
 
 hoje = date.today()
 hoje = hoje.replace(day=1)
 
 sliderIntervalo = st.sidebar.date_input("Período",
-                     value = (date(2025,1,1),DF_ApenasLojas['Data'].max()),
+                     value = (date(2025,1,1),DFLojas['Data'].max()),
                      min_value=date(2018,1,1),
-                     max_value=DF_ApenasLojas['Data'].max(),
+                     max_value=DFLojas['Data'].max(),
                      format= "DD/MM/YYYY"
 )
 inicio, fim = sliderIntervalo
@@ -39,7 +39,7 @@ inicio = inicio.replace(day=1)
 fim = fim.replace(day=1)
 inicio = pd.to_datetime(inicio)
 fim = pd.to_datetime(fim)
-segmentosUnicos = DF_ApenasLojas['Segmento'].unique().tolist()
+segmentosUnicos = DFLojas['Segmento'].unique().tolist()
 segmentoInutil = ['Comodato', 'Depósito']
 default = [x for x in segmentosUnicos if x not in segmentoInutil]
 
@@ -60,9 +60,9 @@ with st.sidebar.expander("Filtros Avançados", expanded=False):
 
     PisosSelecionados = st.pills(
         'Selecione os pisos que deseja visualizar',
-        options = DF_ApenasLojas['Piso'].dropna().unique().tolist(),
+        options = DFLojas['Piso'].dropna().unique().tolist(),
         selection_mode = 'multi',
-        default = DF_ApenasLojas['Piso'].dropna().unique().tolist()
+        default = DFLojas['Piso'].dropna().unique().tolist()
     )
 
 
@@ -157,82 +157,86 @@ st.markdown("""
 
 # Bloco 1
 st.title("Relatório de Performance - Grupo NA:blue[v]A")
-st.header("Vendas Totais")
 
-@st.cache_data
-def VendasTotaisComite(DFLojas, Segmento, Lado, Piso, inicio, fim, sss):
-  #Buscando o periodo de Ano Anterior
-  inicio_aa = inicio - relativedelta(years=1)
-  fim_aa    = fim    - relativedelta(years=1)
 
-  # Aplicando os Filtros do SideBar
-  filtroSideBar = ((DFLojas['Segmento'].isin(Segmento)) &
-      (DFLojas['Piso'].isin(Piso)) &
-      ((Lado == 'Ambos')
-       |
-       (DFLojas['Lado']==Lado)
-       ))
 
-  filtroDataSelecionada = (DFLojas['Data'] >= inicio) & (DFLojas['Data'] <= fim)
-  filtroDataSelecionada_AA = (DFLojas['Data'] >= inicio_aa) & (DFLojas['Data'] <= fim_aa)
-  
-  DFLojasAtual = DFLojas.loc[filtroSideBar & filtroDataSelecionada]
-  DFLojasAA = DFLojas.loc[filtroSideBar & filtroDataSelecionada_AA]
-  
-  ## SSS ##
-  if sss:
-    # depois de gerar DFLojasAtual e DFLojasAA -----------------------------
+tabMain, tabDF =  st.tabs(["Informações Principais", "Relatórios"])
 
-    for df in (DFLojasAtual, DFLojasAA):
-        df['month'] = df['Data'].dt.month        # 1) mês numérico
+#Buscando o periodo de Ano Anterior
+inicio_aa = inicio - relativedelta(years=1)
+fim_aa    = fim    - relativedelta(years=1)
 
-    # 2) pares (ID, month) presentes nos dois períodos
-    pares_comuns = (
-        DFLojasAtual[['ID', 'month']].drop_duplicates()
-        .merge(DFLojasAA[['ID', 'month']].drop_duplicates(),
-              on=['ID', 'month'], how='inner')
-    )
+# Aplicando os Filtros do SideBar
+filtroSideBar = ((DFLojas['Segmento'].isin(SegmentosSelecionados)) &
+    (DFLojas['Piso'].isin(PisosSelecionados)) &
+    ((LadoSelecionado == 'Ambos')
+      |
+      (DFLojas['Lado']==LadoSelecionado)
+      ))
 
-    # 3) aplica interseção – agora cada loja só tem meses em que existia nos DOIS anos
-    DFLojasAtual = DFLojasAtual.merge(pares_comuns, on=['ID', 'month'], how='inner')
-    DFLojasAA    = DFLojasAA.merge(pares_comuns, on=['ID', 'month'], how='inner')
-  ## FIM DO SSS ##
-  
-  #Trazendo Mês-a-Mês
-  group_v   = DFLojasAtual.groupby('Data')['Venda'].sum()
-  group_aa  = DFLojasAA.groupby('Data')['Venda'].sum()
-  mes_a_mes = pd.DataFrame({'Data':     pd.to_datetime(group_v.index),
-                            'Venda':    group_v.values,
-                            'VendaAA':  group_aa.values})
-  mes_a_mes['Variação'] = round(((mes_a_mes['Venda'] / mes_a_mes['VendaAA']) -1) * 100,2)
+filtroDataSelecionada = (DFLojas['Data'] >= inicio) & (DFLojas['Data'] <= fim)
+filtroDataSelecionada_AA = (DFLojas['Data'] >= inicio_aa) & (DFLojas['Data'] <= fim_aa)
 
-  variacao = (((mes_a_mes['Venda'].sum() / mes_a_mes['VendaAA'].sum()) - 1) * 100).round(2)
-  
-  col1, col2, col3 = st.columns([0.43,0.14,0.43], gap="large")
+DFLojasAtual = DFLojas.loc[filtroSideBar & filtroDataSelecionada]
+DFLojasAA = DFLojas.loc[filtroSideBar & filtroDataSelecionada_AA]
 
-  figVendatotal = px.line(
-   mes_a_mes,
-   x='Data',
-   y=['Venda','VendaAA'],
-   markers=True,
-   custom_data=['Variação'],                
-   color_discrete_map={'Venda':'#00b7db','VendaAA':'#000000'}
+## SSS ##
+if sss:
+  # depois de gerar DFLojasAtual e DFLojasAA -----------------------------
+
+  for df in (DFLojasAtual, DFLojasAA):
+      df['month'] = df['Data'].dt.month        # 1) mês numérico
+
+  # 2) pares (ID, month) presentes nos dois períodos
+  pares_comuns = (
+      DFLojasAtual[['ID', 'month']].drop_duplicates()
+      .merge(DFLojasAA[['ID', 'month']].drop_duplicates(),
+            on=['ID', 'month'], how='inner')
   )
 
-  # agora respesos hover templates
-  for trace in figVendatotal.data:
-      if trace.name == 'Venda':
-          trace.hovertemplate = (
-              "Data: %{x|%d/%m/%Y}<br>"
-              "Venda: R$ %{y:,.2f}<br>"
-              "Variação: %{customdata[0]:.2f}%<extra></extra>"
-          )
-      else:  # VendaAA
-          trace.hovertemplate = (
-              "Data: %{x|%d/%m/%Y}<br>"
-              f"{trace.name}: R$ "+"%{y:,.2f}<extra></extra>"
-          )
+  # 3) aplica interseção – agora cada loja só tem meses em que existia nos DOIS anos
+  DFLojasAtual = DFLojasAtual.merge(pares_comuns, on=['ID', 'month'], how='inner')
+  DFLojasAA    = DFLojasAA.merge(pares_comuns, on=['ID', 'month'], how='inner')
+## FIM DO SSS ##
 
+#Trazendo Mês-a-Mês
+group_v   = DFLojasAtual.groupby('Data')['Venda'].sum()
+group_aa  = DFLojasAA.groupby('Data')['Venda'].sum()
+mes_a_mes = pd.DataFrame({'Data':     pd.to_datetime(group_v.index),
+                          'Venda':    group_v.values,
+                          'VendaAA':  group_aa.values})
+mes_a_mes['Variação'] = round(((mes_a_mes['Venda'] / mes_a_mes['VendaAA']) -1) * 100,2)
+
+variacao = (((mes_a_mes['Venda'].sum() / mes_a_mes['VendaAA'].sum()) - 1) * 100).round(2)
+
+
+
+figVendatotal = px.line(
+  mes_a_mes,
+  x='Data',
+  y=['Venda','VendaAA'],
+  markers=True,
+  custom_data=['Variação'],                
+  color_discrete_map={'Venda':'#00b7db','VendaAA':'#000000'}
+)
+
+# agora respesos hover templates
+for trace in figVendatotal.data:
+    if trace.name == 'Venda':
+        trace.hovertemplate = (
+            "Data: %{x|%d/%m/%Y}<br>"
+            "Venda: R$ %{y:,.2f}<br>"
+            "Variação: %{customdata[0]:.2f}%<extra></extra>"
+        )
+    else:  # VendaAA
+        trace.hovertemplate = (
+            "Data: %{x|%d/%m/%Y}<br>"
+            f"{trace.name}: R$ "+"%{y:,.2f}<extra></extra>"
+        )
+
+with tabMain:
+  st.header("Vendas Totais")
+  col1, col2, col3 = st.columns([0.43,0.14,0.43], gap="large")
   with col1:
     figVendatotal.update_layout(height=450)
     st.plotly_chart(figVendatotal, use_container_width=True)
@@ -246,8 +250,8 @@ def VendasTotaisComite(DFLojas, Segmento, Lado, Piso, inicio, fim, sss):
                 value=f"{round(mes_a_mes['VendaAA'].sum()/1000000,2)}M",
                 width="content",
                 border= True)
-    st.metric(label="Operações Ativas", value=f"{len(DFLojasAtual['ID'].unique())} un.",
-                width="stretch",
+    st.metric(label="Operações Ativas", value=f"{len(DFLojasAtual['ID'].unique())} und.",
+                width="content",
                 border= True
                 )
 
@@ -257,6 +261,11 @@ def VendasTotaisComite(DFLojas, Segmento, Lado, Piso, inicio, fim, sss):
         [['Venda','VendaAA']]
         .sum().sort_values(by=['Data', 'Venda'], ascending=True)
         )
+      
+      DF_ApenasLojasSegmentos['Venda'] = DF_ApenasLojasSegmentos['Venda'].apply(lambda x: round(x, 2))
+      DF_ApenasLojasSegmentos['VendaAA'] = DF_ApenasLojasSegmentos['VendaAA'].apply(lambda x: round(x, 2))
+      
+      
       
       DF_ApenasLojasSegmentos['Variacao'] = round((DF_ApenasLojasSegmentos['Venda'] / DF_ApenasLojasSegmentos['VendaAA'] - 1)*100,2)
       DF_ApenasLojasSegmentos['Variacao'] = DF_ApenasLojasSegmentos['Variacao'].apply(lambda x: f"{x:.2f}%" if x >= 0 else f"{x:.2f}%")
@@ -272,90 +281,20 @@ def VendasTotaisComite(DFLojas, Segmento, Lado, Piso, inicio, fim, sss):
           orientation='h',
           hover_data=['VendaAA', 'Variacao', 'Data'],
           color='Segmento',
-          color_discrete_sequence=px.colors.sequential.Blues[::-1]
-          
+          color_discrete_sequence=px.colors.sequential.Blues[::-1],
+          category_orders={'Segmento': ordem}
       )
-      fig.update_layout(height=450)
+      fig.update_layout(height=450,
+                        showlegend=False)
       st.plotly_chart(fig, use_container_width=True)
 
-  regras = {
-      'Âncoras': 5, 
-      'Conveniência / Serviços': 15, 
-      'Satélites': 15, 
-      'Semi Âncoras': 5,
-      'Mega Lojas': 10,  
-      'Entretenimento': 15, 
-      'Quiosque':15
-  }
-
-  CriticoAcumulado = DFLojasAtual.groupby(['ID'], as_index=False).agg({
-      'M2': 'last',
-      'VendaAA': 'sum',
-      'Venda': 'sum',
-      'CTO Comum': 'sum',
-      'Aluguel Mínimo': 'sum',
-      'Aluguel Complementar': 'sum',
-      'Encargo Comum': 'sum',
-      'Segmento': 'last',
-      'Piso': 'last',
-      'Lado': 'last'
-      
-  })
-  CriticoAcumulado['CTO Comum/Venda'] = round((CriticoAcumulado['CTO Comum'] / CriticoAcumulado['Venda']) * 100, 2)
-  CriticoAcumulado = CriticoAcumulado[['ID', 
-                                       'VendaAA', 
-                                       'Venda', 
-                                       'CTO Comum', 
-                                       'CTO Comum/Venda', 
-                                       'Aluguel Mínimo', 
-                                       'Aluguel Complementar', 
-                                       'Encargo Comum', 
-                                       'Segmento', 
-                                       'Piso', 
-                                       'Lado']]
-  VendaMenorQueAA = CriticoAcumulado[CriticoAcumulado['Venda'] < CriticoAcumulado['VendaAA']]
-
-
-  criticoCTOAlto = VendaMenorQueAA[(VendaMenorQueAA['CTO Comum/Venda'] > VendaMenorQueAA['Segmento'].map(regras))]
-  desconto = ['LP01_MARIA CAFÉ', 'QL238_CASA DA PELÚCIA', 'Q104_BENDITA EMPADA', 'Q109_PRAÇAÍ', '1000_SUPERMERCADOS BH']
-  criticoFinal = criticoCTOAlto[criticoCTOAlto['ID'].isin(desconto)]
-  fluxograma = Digraph(comment='Lojas Críticas')
-  fluxograma.node('1', 'Lojas')
-  fluxograma.node('2', 'Vendas < Vendas AA')
-  fluxograma.node('3', 'Custo de Operação Alto')
-  fluxograma.node('4', 'Desconto e/ou Inadimplência')
-  fluxograma.node('A', f"{len(VendaMenorQueAA)}")
-  fluxograma.node('B', f"{len(criticoCTOAlto)}")
-  fluxograma.edge('1', '2')
-  with fluxograma.subgraph() as s:
-    s.attr(rank='same')
-    s.node('2')
-    s.node('A')
-  with fluxograma.subgraph() as s:
-    s.attr(rank='same')
-    s.node('3')
-    s.node('B')
-  fluxograma.edge('2', 'A')
-  fluxograma.edge('3', 'B')
-  fluxograma.edge('A', 'B')
-  fluxograma.edge('2', '3')
-  fluxograma.edge('3', '4')
-  for i in range(len(criticoFinal)):
-      fluxograma.node(f'{i+5}', criticoFinal['ID'].iloc[i])
-      fluxograma.edge('4', f'{i+5}')
-  st.header('Lojas Críticas')
   
-  colx, coly, colz = st.columns([0.15, 0.7, 0.15], gap="large")
-  with coly:
-    st.graphviz_chart(fluxograma, use_container_width=True)
-
-  st.dataframe(criticoFinal.iloc[:,:-3].reset_index(drop=True), use_container_width=True, hide_index=True)
 
   st.divider()
 
         # ------------- PISO PISO PISO ----------------
-  LojasSemFiltroPiso_e_Lado = DFLojas.loc[(DFLojas['Segmento'].isin(Segmento)) & (DFLojas['Data'] >= inicio) & (DFLojas['Data'] <= fim)]
-  LojasSemFiltroPiso_e_LadoAA = DFLojas.loc[(DFLojas['Segmento'].isin(Segmento)) & (DFLojas['Data'] >= inicio_aa) & (DFLojas['Data'] <= fim_aa)]
+  LojasSemFiltroPiso_e_Lado = DFLojas.loc[(DFLojas['Segmento'].isin(SegmentosSelecionados)) & (DFLojas['Data'] >= inicio) & (DFLojas['Data'] <= fim)]
+  LojasSemFiltroPiso_e_LadoAA = DFLojas.loc[(DFLojas['Segmento'].isin(SegmentosSelecionados)) & (DFLojas['Data'] >= inicio_aa) & (DFLojas['Data'] <= fim_aa)]
 
   LojasSemFiltroPiso_e_Lado = LojasSemFiltroPiso_e_Lado.groupby(['Data', 'Piso','Lado'], as_index=False)[['Venda','CTO Comum']].sum()
   LojasSemFiltroPiso_e_LadoAA = LojasSemFiltroPiso_e_LadoAA.groupby(['Data', 'Piso','Lado'], as_index=False)[['Venda']].sum()
@@ -383,7 +322,7 @@ def VendasTotaisComite(DFLojas, Segmento, Lado, Piso, inicio, fim, sss):
       variacao   = round((soma/soma_AA-1)*100, 2) if soma_AA else 0
       total_piso = round(
           (soma / DFLojas.loc[
-            filtroDataSelecionada & DFLojas['Segmento'].isin(Segmento)
+            filtroDataSelecionada & DFLojas['Segmento'].isin(SegmentosSelecionados)
           ]['Venda'].sum()*100), 2
       ) if soma else 0
   
@@ -412,115 +351,82 @@ def VendasTotaisComite(DFLojas, Segmento, Lado, Piso, inicio, fim, sss):
               st.markdown(html, unsafe_allow_html=True)
         
     # ------------- FIM PISO PISO PISO ----------------
-  
-    # ------------- LOJAS QUE ENTRARAM E SAÍRAM ----------------
-  st.subheader('Lojas que entraram e saíram')
-  UltimaData = DFLojas['Data que entrou'].max()
-  EntradaSaida = DFLojas[['Nome Fantasia', 'Data que entrou', 'Data que saiu']]
-  df_entradas = EntradaSaida[["Data que entrou", "Nome Fantasia"]].rename(columns={"Data que entrou": "Data", "Nome Fantasia": "Entrou"})
-  df_saidas = EntradaSaida[["Data que saiu", "Nome Fantasia"]].rename(columns={"Data que saiu": "Data", "Nome Fantasia": "Saiu"})
-  df_saidas.loc[df_saidas['Data'] == UltimaData, 'Data'] = pd.NaT
-  EntradaSaida = pd.concat([df_entradas, df_saidas])
-  EntradaSaida = EntradaSaida.groupby("Data").agg(lambda x: ', '.join(x.dropna().unique())).reset_index().sort_values(by = ['Data'], ascending=False)
-  mascaraDeContagemVirgulaEntrou = EntradaSaida['Entrou'].fillna('').str.count(',')
-  mascaraDeContagemVirgulaSaiu = EntradaSaida['Saiu'].fillna('').str.count(',')
-  EntradaSaida['Entrou (Contagem)'] = (
-    (mascaraDeContagemVirgulaEntrou + 1).where(EntradaSaida['Entrou'] != '', 0)
-    .astype(int)
+
+
+
+  colx, coly, colz = st.columns([0.4,0.2,0.4])
+  inicioF, fimF = sliderIntervalo
+  inicioF = pd.to_datetime(inicioF)
+  fimF = pd.to_datetime(fimF)
+
+  DF_FluxoFiltrado = DF_Fluxo[(DF_Fluxo.index >= inicioF)&(DF_Fluxo.index <= fimF)]
+  DF_FluxoFiltradoAA = DF_Fluxo[(DF_Fluxo.index >= inicioF - relativedelta(years=1))&(DF_Fluxo.index <= fimF - relativedelta(years=1))]
+
+  DF_FluxoMap = DF_Fluxo['Fluxo de Pessoas'].to_dict()
+  DF_FluxoFiltrado['Fluxo de Pessoas AA'] = DF_FluxoFiltrado.index.map(
+    lambda d: DF_FluxoMap.get(d - pd.DateOffset(years=1), 0)
+    )
+
+
+
+with tabDF:
+  Pagantes_Fluxo = DF_FluxoFiltrado.melt(
+      id_vars=['Dia','Mês', 'Ano'],
+      value_vars=['Fluxo Pagante', 'Fluxo Mensalista', 'Fluxo Carência', 'Total Isenções'],
+      var_name='Tipo',
+      value_name='Valor'
   )
-  EntradaSaida['Saiu (Contagem)'] = (
-    (mascaraDeContagemVirgulaSaiu + 1).where(EntradaSaida['Saiu'] != '', 0)
-    .astype(int)
-  )
-  EntradaSaida = EntradaSaida[(EntradaSaida['Data'] >= inicio)&(EntradaSaida['Data'] <= fim)]
-  EntradaSaida['Data'] = EntradaSaida['Data'].dt.strftime('%d/%m/%Y')
-  EntradaSaida = EntradaSaida[['Data', 'Entrou (Contagem)', 'Saiu (Contagem)', 'Entrou', 'Saiu']]
-
-  st.dataframe(EntradaSaida, hide_index=True, use_container_width=True)
-
-  
-
-    # ------------- FIM LOJAS QUE ENTRARAM E SAÍRAM ----------------
-
-
-
-
-
-VendasTotaisComite(DF_ApenasLojas, SegmentosSelecionados, LadoSelecionado, PisosSelecionados, inicio, fim, sss)
-
-col1, col2, col3 = st.columns([0.4,0.2,0.4])
-inicioF, fimF = sliderIntervalo
-inicioF = pd.to_datetime(inicioF)
-fimF = pd.to_datetime(fimF)
-
-DF_FluxoFiltrado = DF_Fluxo[(DF_Fluxo.index >= inicioF)&(DF_Fluxo.index <= fimF)]
-DF_FluxoFiltradoAA = DF_Fluxo[(DF_Fluxo.index >= inicioF - relativedelta(years=1))&(DF_Fluxo.index <= fimF - relativedelta(years=1))]
-
-DF_FluxoMap = DF_Fluxo['Fluxo de Pessoas'].to_dict()
-DF_FluxoFiltrado['Fluxo de Pessoas AA'] = DF_FluxoFiltrado.index.map(
-  lambda d: DF_FluxoMap.get(d - pd.DateOffset(years=1), 0)
+  fig = px.pie(
+      Pagantes_Fluxo,
+      values='Valor',
+      names='Tipo',
+      title='Pagantes',
+      color_discrete_sequence=px.colors.qualitative.Plotly
   )
 
+  meses_dict = {
+      'janeiro': 1,
+      'fevereiro': 2,
+      'março': 3,
+      'abril': 4,
+      'maio': 5,
+      'junho': 6,
+      'julho': 7,
+      'agosto': 8,
+      'setembro': 9,
+      'outubro': 10,
+      'novembro': 11,
+      'dezembro': 12
+  }
+
+  FluxoMes = DF_FluxoFiltrado.groupby(['Mês','Ano'])[['Fluxo de Pessoas', 'Fluxo de Pessoas AA']].sum().reset_index()
+  FluxoMes['Variação'] = round((FluxoMes['Fluxo de Pessoas'] / FluxoMes['Fluxo de Pessoas AA'] - 1) * 100, 2)
+  FluxoMes['Data'] = pd.to_datetime(FluxoMes['Ano'].astype(str) + '/' + FluxoMes['Mês'].str.lower().map(meses_dict).astype(str)+'/'+ '01')
+  FluxoMes = FluxoMes.sort_values(by='Data')
+  FluxoMes = FluxoMes.drop(columns=['Mês', 'Ano'])
+  FluxoMes = FluxoMes[['Data', 'Fluxo de Pessoas', 'Fluxo de Pessoas AA', 'Variação']]
+
+  figFluxo = px.line(
+      FluxoMes,
+      x='Data',
+      y=['Fluxo de Pessoas', 'Fluxo de Pessoas AA'],
+      markers=True,
+      custom_data=['Variação'],
+      color_discrete_map={'Fluxo de Pessoas':'#00b7db','Fluxo de Pessoas AA':'#000000'}
+  )
+  #
+  with colx:
+    st.plotly_chart(figFluxo, use_container_width=True)
+
+    
+  with coly:
+      st.markdown(f'<div class="bloco-de-info" style = "margin: 2px auto;"><h3>Fluxo de Pessoas</h3><p>{DF_FluxoFiltrado['Fluxo de Pessoas'].sum().astype(int)}</p></div>', unsafe_allow_html=True)
+      st.markdown(f'<div class="bloco-de-info" style = "margin: 2px auto;"><h3>Variação AA</h3><p>{round((DF_FluxoFiltrado['Fluxo de Pessoas'].sum()/DF_FluxoFiltradoAA['Fluxo de Pessoas'].sum()-1)*100,2)}%</p></div>', unsafe_allow_html=True)
+      st.markdown(f'<div class="bloco-de-info" style = "margin: 2px auto;"><h3>Média por mês</h3><p>{DF_FluxoFiltrado.groupby('Mês')['Fluxo de Pessoas'].sum().mean().astype(int)}</p></div>', unsafe_allow_html=True)
+      st.markdown(f'<div class="bloco-de-info" style = "margin: 2px auto;"><h3>Fluxo de carros</h3><p>{DF_FluxoFiltrado['Fluxo de Carros'].sum().astype(int)}</p></div>', unsafe_allow_html=True)
+      st.markdown(f'<div class="bloco-de-info" style = "margin: 2px auto;"><h3>Receita</br>Estacionamento</h3><p>R${round(DF_FluxoFiltrado['Receita Total Sistema'].sum()/1000,2)}k</p></div>', unsafe_allow_html=True)
+  with colz:
+      st.plotly_chart(fig, use_container_width=True)
 
 
-
-Pagantes_Fluxo = DF_FluxoFiltrado.melt(
-    id_vars=['Dia','Mês', 'Ano'],
-    value_vars=['Fluxo Pagante', 'Fluxo Mensalista', 'Fluxo Carência', 'Total Isenções'],
-    var_name='Tipo',
-    value_name='Valor'
-)
-fig = px.pie(
-    Pagantes_Fluxo,
-    values='Valor',
-    names='Tipo',
-    title='Pagantes',
-    color_discrete_sequence=px.colors.qualitative.Plotly
-)
-
-meses_dict = {
-    'janeiro': 1,
-    'fevereiro': 2,
-    'março': 3,
-    'abril': 4,
-    'maio': 5,
-    'junho': 6,
-    'julho': 7,
-    'agosto': 8,
-    'setembro': 9,
-    'outubro': 10,
-    'novembro': 11,
-    'dezembro': 12
-}
-
-FluxoMes = DF_FluxoFiltrado.groupby(['Mês','Ano'])[['Fluxo de Pessoas', 'Fluxo de Pessoas AA']].sum().reset_index()
-FluxoMes['Variação'] = round((FluxoMes['Fluxo de Pessoas'] / FluxoMes['Fluxo de Pessoas AA'] - 1) * 100, 2)
-FluxoMes['Data'] = pd.to_datetime(FluxoMes['Ano'].astype(str) + '/' + FluxoMes['Mês'].str.lower().map(meses_dict).astype(str)+'/'+ '01')
-FluxoMes = FluxoMes.sort_values(by='Data')
-FluxoMes = FluxoMes.drop(columns=['Mês', 'Ano'])
-FluxoMes = FluxoMes[['Data', 'Fluxo de Pessoas', 'Fluxo de Pessoas AA', 'Variação']]
-
-figFluxo = px.line(
-    FluxoMes,
-    x='Data',
-    y=['Fluxo de Pessoas', 'Fluxo de Pessoas AA'],
-    markers=True,
-    custom_data=['Variação'],
-    color_discrete_map={'Fluxo de Pessoas':'#00b7db','Fluxo de Pessoas AA':'#000000'}
-)
-#
-with col1:
-  st.plotly_chart(figFluxo, use_container_width=True)
-
-  
-with col2:
-    st.markdown(f'<div class="bloco-de-info" style = "margin: 2px auto;"><h3>Fluxo de Pessoas</h3><p>{DF_FluxoFiltrado['Fluxo de Pessoas'].sum().astype(int)}</p></div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="bloco-de-info" style = "margin: 2px auto;"><h3>Variação AA</h3><p>{round((DF_FluxoFiltrado['Fluxo de Pessoas'].sum()/DF_FluxoFiltradoAA['Fluxo de Pessoas'].sum()-1)*100,2)}%</p></div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="bloco-de-info" style = "margin: 2px auto;"><h3>Média por mês</h3><p>{DF_FluxoFiltrado.groupby('Mês')['Fluxo de Pessoas'].sum().mean().astype(int)}</p></div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="bloco-de-info" style = "margin: 2px auto;"><h3>Fluxo de carros</h3><p>{DF_FluxoFiltrado['Fluxo de Carros'].sum().astype(int)}</p></div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="bloco-de-info" style = "margin: 2px auto;"><h3>Receita</br>Estacionamento</h3><p>R${round(DF_FluxoFiltrado['Receita Total Sistema'].sum()/1000,2)}k</p></div>', unsafe_allow_html=True)
-with col3:
-    st.plotly_chart(fig, use_container_width=True)
-
-
-st.dataframe(DF_FluxoFiltrado, use_container_width=True, hide_index=True)
+  st.dataframe(DF_FluxoFiltrado, use_container_width=True, hide_index=True)
