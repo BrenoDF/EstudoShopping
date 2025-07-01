@@ -80,6 +80,13 @@ def TabelaOriginal(emp):
 
 
     DF_ApenasLojas = CompClassPosVs[~CompClassPosVs['Luc'].str.contains(r'[DMX]', na = False, case = False)]
+    colunasDF = DF_ApenasLojas.columns.tolist()
+    colunasDF.remove('Data')
+    colunasDF = ['Data'] + colunasDF
+    DF_ApenasLojas = DF_ApenasLojas[colunasDF]
+    
+
+            
 
 # ------ FIM DA CONSTRUÇÃO DA TABELA MAIN ------ #
 
@@ -99,4 +106,10 @@ def TabelaOriginal(emp):
 
 
     return (CompClassPosVs,DF_Fluxo, DF_ApenasLojas)
+def formata_numero(valor, prefixo = ''):
+    for unidade in ['', 'mil']:
+        if valor <1000:
+            return f"{prefixo}{valor:.2f} {unidade}"
+        valor /= 1000
+    return f"{prefixo}{valor:.2f} milhões"
 ##################

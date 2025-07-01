@@ -149,8 +149,12 @@ st.markdown("""
       padding: 2px 6px;
       border-radius: 4px;
       font-weight: bold;
-      color: #0056b3;
       }
+      .positivo {
+        color: #0056b3;
+      }
+      .negativo {
+        color: #dc3545;  
     </style>
 
       """, unsafe_allow_html=True)
@@ -160,7 +164,7 @@ st.title("Relatório de Performance - Grupo NA:blue[v]A")
 
 
 
-tabMain, tabDF =  st.tabs(["Informações Principais", "Relatórios"])
+tabMain, tabDF =  st.tabs(["Resumos", "Tabelas"])
 
 #Buscando o periodo de Ano Anterior
 inicio_aa = inicio - relativedelta(years=1)
@@ -234,7 +238,10 @@ for trace in figVendatotal.data:
             f"{trace.name}: R$ "+"%{y:,.2f}<extra></extra>"
         )
 
+
 with tabMain:
+  st.title('Resumos')
+  st.divider()
   st.header("Vendas Totais")
   col1, col2, col3 = st.columns([0.43,0.14,0.43], gap="large")
   with col1:
@@ -293,6 +300,7 @@ with tabMain:
   st.divider()
 
         # ------------- PISO PISO PISO ----------------
+  st.subheader("Vendas por Piso e Lado")
   LojasSemFiltroPiso_e_Lado = DFLojas.loc[(DFLojas['Segmento'].isin(SegmentosSelecionados)) & (DFLojas['Data'] >= inicio) & (DFLojas['Data'] <= fim)]
   LojasSemFiltroPiso_e_LadoAA = DFLojas.loc[(DFLojas['Segmento'].isin(SegmentosSelecionados)) & (DFLojas['Data'] >= inicio_aa) & (DFLojas['Data'] <= fim_aa)]
 
@@ -315,11 +323,12 @@ with tabMain:
           "Piso == @piso and Lado == @lado"
       )['CTO Comum'].sum()
       # calcula métricas
-      vendaAA_k  = round(soma_AA/1000, 2)
-      venda_k    = round(soma/1000, 2)
-      cto_k      = round(cto/1000, 2)
+      vendaAA_k  = ProcTab.formata_numero(soma_AA)
+      venda_k    = ProcTab.formata_numero(soma)
+      cto_k      = ProcTab.formata_numero(cto/1000)
       cto_venda  = round(cto/soma*100, 2) if cto else 0
       variacao   = round((soma/soma_AA-1)*100, 2) if soma_AA else 0
+      classeVarPiso = "positivo" if variacao >= 0 else "negativo"
       total_piso = round(
           (soma / DFLojas.loc[
             filtroDataSelecionada & DFLojas['Segmento'].isin(SegmentosSelecionados)
@@ -330,13 +339,13 @@ with tabMain:
   <div class="info-bloco">
     <div><h4>{piso}</h4></div>
     <div class="linha">
-      <div>VendaAA:<br><b>{vendaAA_k}k</b></div>
-      <div>Venda:<br><b>{venda_k}k</b></div>
-      <div>CTO:<br><b>{cto_k}k</b></div>
+      <div>VendaAA:<br><b>{vendaAA_k}</b></div>
+      <div>Venda:<br><b>{venda_k}</b></div>
+      <div>CTO:<br><b>{cto_k}</b></div>
       <div>CTO/Venda:<br><b>{cto_venda}%</b></div>
     </div>
     <div class="linha-centralizada">
-      <div>Variação:<br><span class="variacao">{variacao}%</span></div>
+      <div>Variação:<br><span class="variacao {classeVarPiso}">{variacao}%</span></div>
       <div>Venda Total / Piso:<br><b>{total_piso}%</b></div>
     </div>
   </div>
@@ -352,6 +361,8 @@ with tabMain:
         
     # ------------- FIM PISO PISO PISO ----------------
 
+  st.divider()
+  st.subheader("Dados de Fluxo")
 
 
   colx, coly, colz = st.columns([0.4,0.2,0.4])
@@ -367,9 +378,6 @@ with tabMain:
     lambda d: DF_FluxoMap.get(d - pd.DateOffset(years=1), 0)
     )
 
-
-
-with tabDF:
   Pagantes_Fluxo = DF_FluxoFiltrado.melt(
       id_vars=['Dia','Mês', 'Ano'],
       value_vars=['Fluxo Pagante', 'Fluxo Mensalista', 'Fluxo Carência', 'Total Isenções'],
@@ -420,13 +428,24 @@ with tabDF:
 
     
   with coly:
-      st.markdown(f'<div class="bloco-de-info" style = "margin: 2px auto;"><h3>Fluxo de Pessoas</h3><p>{DF_FluxoFiltrado['Fluxo de Pessoas'].sum().astype(int)}</p></div>', unsafe_allow_html=True)
+      st.markdown(f'<div class="bloco-de-info" style = "margin: 2px auto;"><h3>Fluxo de Pessoas</h3><p>{ProcTab.formata_numero(DF_FluxoFiltrado['Fluxo de Pessoas'].sum().astype(int))}</p></div>', unsafe_allow_html=True)
       st.markdown(f'<div class="bloco-de-info" style = "margin: 2px auto;"><h3>Variação AA</h3><p>{round((DF_FluxoFiltrado['Fluxo de Pessoas'].sum()/DF_FluxoFiltradoAA['Fluxo de Pessoas'].sum()-1)*100,2)}%</p></div>', unsafe_allow_html=True)
-      st.markdown(f'<div class="bloco-de-info" style = "margin: 2px auto;"><h3>Média por mês</h3><p>{DF_FluxoFiltrado.groupby('Mês')['Fluxo de Pessoas'].sum().mean().astype(int)}</p></div>', unsafe_allow_html=True)
-      st.markdown(f'<div class="bloco-de-info" style = "margin: 2px auto;"><h3>Fluxo de carros</h3><p>{DF_FluxoFiltrado['Fluxo de Carros'].sum().astype(int)}</p></div>', unsafe_allow_html=True)
-      st.markdown(f'<div class="bloco-de-info" style = "margin: 2px auto;"><h3>Receita</br>Estacionamento</h3><p>R${round(DF_FluxoFiltrado['Receita Total Sistema'].sum()/1000,2)}k</p></div>', unsafe_allow_html=True)
+      st.markdown(f'<div class="bloco-de-info" style = "margin: 2px auto;"><h3>Média por mês</h3><p>{ProcTab.formata_numero(DF_FluxoFiltrado.groupby('Mês')['Fluxo de Pessoas'].sum().mean().astype(int))}</p></div>', unsafe_allow_html=True)
+      st.markdown(f'<div class="bloco-de-info" style = "margin: 2px auto;"><h3>Fluxo de carros</h3><p>{ProcTab.formata_numero(DF_FluxoFiltrado['Fluxo de Carros'].sum().astype(int))}</p></div>', unsafe_allow_html=True)
+      st.markdown(f'<div class="bloco-de-info" style = "margin: 2px auto;"><h3>Receita</br>Estacionamento</h3><p>R${ProcTab.formata_numero(DF_FluxoFiltrado['Receita Total Sistema'].sum())}</p></div>', unsafe_allow_html=True)
   with colz:
       st.plotly_chart(fig, use_container_width=True)
 
 
+with tabDF:
+  st.title("Tabelas")
+  st.divider()
+  st.subheader("Tabela de Lojas")
+  st.dataframe(DFLojasAtual, use_container_width=True, hide_index=True, column_config={
+    'Data': st.column_config.DateColumn(
+        format="DD/MM/YYYY"
+    )
+  } )
+  st.divider()
+  st.subheader("Tabela de Fluxo")
   st.dataframe(DF_FluxoFiltrado, use_container_width=True, hide_index=True)
