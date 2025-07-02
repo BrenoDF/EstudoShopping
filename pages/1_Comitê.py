@@ -6,16 +6,77 @@ from datetime import date
 from graphviz import Digraph
 from dateutil.relativedelta import relativedelta
 
+
+#Lojas com desconto ou inadimplência INSERIR (formato lista)
+
+desconto = []
+
+
+
 pd.options.display.float_format = '{:.2f}'.format
 st.set_page_config(layout="wide",
                    page_title= 'Inicio')
+# Configurações de página
+st.set_page_config(layout="wide",
+page_title= 'Comitê de Performance',
+initial_sidebar_state="collapsed")
 
-hoje = date.today()
 
+## SIDE BAR ##
+st.sidebar.image(r'Imagens/NAVA-preta.png')
+
+st.sidebar.header('Filtros')
 emp = st.sidebar.radio(    "Selecione o Empreendimento",
     options=['Viashopping', 'Viabrasil'], index = 0)
 
-ResumoLojas, DF_Fluxo, DFLojasAtual = ProcTab.TabelaOriginal(emp)
+sss = st.sidebar.toggle("Vendas SSS",
+    value=False,
+    help="Vendas Same Store Sales (Vendas de lojas abertas há mais de 12 meses).")
+
+ResumoLojas, DF_Fluxo, DFLojas = ProcTab.TabelaOriginal(emp)
+
+hoje = date.today()
+hoje = hoje.replace(day=1)
+
+sliderIntervalo = st.sidebar.date_input("Período",
+                     value = (date(2025,1,1),DFLojas['Data'].max()),
+                     min_value=date(2018,1,1),
+                     max_value=DFLojas['Data'].max(),
+                     format= "DD/MM/YYYY"
+)
+inicio, fim = sliderIntervalo
+inicio = inicio.replace(day=1)
+fim = fim.replace(day=1)
+inicio = pd.to_datetime(inicio)
+fim = pd.to_datetime(fim)
+segmentosUnicos = DFLojas['Segmento'].unique().tolist()
+segmentoInutil = ['Comodato', 'Depósito']
+default = [x for x in segmentosUnicos if x not in segmentoInutil]
+
+with st.sidebar.expander("Filtros Avançados", expanded=False):
+
+    SegmentosSelecionados = st.pills(
+            'Selecione os segmentos que deseja visualizar',
+        options=segmentosUnicos,
+        selection_mode= 'multi',
+        default= default
+    )
+
+    LadoSelecionado = st.segmented_control(
+        'Lado:',
+        options = ['Lado A', 'Lado B', 'Ambos'],
+        default = 'Ambos'
+    )
+
+    PisosSelecionados = st.pills(
+        'Selecione os pisos que deseja visualizar',
+        options = DFLojas['Piso'].dropna().unique().tolist(),
+        selection_mode = 'multi',
+        default = DFLojas['Piso'].dropna().unique().tolist()
+    )
+
+
+
 
 
 
@@ -29,7 +90,7 @@ regras = {
       'Quiosque':15
 }
 
-CriticoAcumulado = DFLojasAtual.groupby(['ID'], as_index=False).agg({
+CriticoAcumulado = DFLojas.groupby(['ID'], as_index=False).agg({
     'M2': 'last',
     'VendaAA': 'sum',
     'Venda': 'sum',
@@ -60,7 +121,6 @@ VendaMenorQueAA = CriticoAcumulado[CriticoAcumulado['Venda'] < CriticoAcumulado[
 
 
 criticoCTOAlto = VendaMenorQueAA[(VendaMenorQueAA['CTO Comum/Venda'] > VendaMenorQueAA['Segmento'].map(regras))]
-desconto = ['LP01_MARIA CAFÉ', 'QL238_CASA DA PELÚCIA', 'Q104_BENDITA EMPADA', 'Q109_PRAÇAÍ', '1000_SUPERMERCADOS BH']
 criticoFinal = criticoCTOAlto[criticoCTOAlto['ID'].isin(desconto)]
 fluxograma = Digraph(comment='Lojas Críticas')
 fluxograma.node('1', 'Lojas')

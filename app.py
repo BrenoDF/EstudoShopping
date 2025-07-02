@@ -67,8 +67,27 @@ with st.sidebar.expander("Filtros Avançados", expanded=False):
 
 
 ### MARKDOWN PARA INFORMAÇÕES ###
+CSSMetricas = '''
+[data-testid="metric-container"] {
+    width: fit-content;
+    margin: auto;
+}
+
+[data-testid="metric-container"] > div {
+    width: fit-content;
+    margin: auto;
+}
+
+[data-testid="metric-container"] label {
+    width: fit-content;
+    margin: auto;
+}
+'''
+
 st.markdown("""
-              <style>
+            
+        <style>
+
         .bloco-de-info {
         display: inline-block;
         padding: 6px 10px;
@@ -154,7 +173,16 @@ st.markdown("""
         color: #0056b3;
       }
       .negativo {
-        color: #dc3545;  
+        color: #dc3545;
+        }
+      [data-testid="stMetric"] {
+        display: grid;
+        justify-content: center;
+        align-items: center;
+      }
+      [data-testid="stMetricValue"] {
+        font-size: 2.00rem;
+      }
     </style>
 
       """, unsafe_allow_html=True)
@@ -221,7 +249,7 @@ figVendatotal = px.line(
   y=['Venda','VendaAA'],
   markers=True,
   custom_data=['Variação'],                
-  color_discrete_map={'Venda':'#00b7db','VendaAA':'#000000'}
+  color_discrete_map={'Venda':'#00b7db','VendaAA':'#000000'}, title='Vendas por Mês'
 )
 
 # agora respesos hover templates
@@ -250,7 +278,7 @@ with tabMain:
   with col2:
     st.metric(label="Vendas Totais",
                 value=f"{round(mes_a_mes['Venda'].sum()/1000000,2)}M",
-                delta=f"{round(variacao,2)}%",
+                delta=f"{round(variacao,2)}% / AA",
                 width="content",
                 border= True)
     st.metric(label="Vendas Ano Anterior",
@@ -289,7 +317,7 @@ with tabMain:
           hover_data=['VendaAA', 'Variacao', 'Data'],
           color='Segmento',
           color_discrete_sequence=px.colors.sequential.Blues[::-1],
-          category_orders={'Segmento': ordem}
+          category_orders={'Segmento': ordem}, title='Vendas por Segmento',
       )
       fig.update_layout(height=450,
                         showlegend=False)
@@ -365,7 +393,7 @@ with tabMain:
   st.subheader("Dados de Fluxo")
 
 
-  colx, coly, colz = st.columns([0.4,0.2,0.4])
+  colx, coly, colz = st.columns([0.4,0.15,0.4])
   inicioF, fimF = sliderIntervalo
   inicioF = pd.to_datetime(inicioF)
   fimF = pd.to_datetime(fimF)
@@ -388,7 +416,7 @@ with tabMain:
       Pagantes_Fluxo,
       values='Valor',
       names='Tipo',
-      title='Pagantes',
+      title='Fluxo Categórico Agregado',
       color_discrete_sequence=px.colors.qualitative.Plotly
   )
 
@@ -419,20 +447,31 @@ with tabMain:
       x='Data',
       y=['Fluxo de Pessoas', 'Fluxo de Pessoas AA'],
       markers=True,
+      title='Fluxo de Pessoas por Mês',
       custom_data=['Variação'],
       color_discrete_map={'Fluxo de Pessoas':'#00b7db','Fluxo de Pessoas AA':'#000000'}
   )
   #
   with colx:
     st.plotly_chart(figFluxo, use_container_width=True)
+    
 
     
   with coly:
-      st.markdown(f'<div class="bloco-de-info" style = "margin: 2px auto;"><h3>Fluxo de Pessoas</h3><p>{ProcTab.formata_numero(DF_FluxoFiltrado['Fluxo de Pessoas'].sum().astype(int))}</p></div>', unsafe_allow_html=True)
-      st.markdown(f'<div class="bloco-de-info" style = "margin: 2px auto;"><h3>Variação AA</h3><p>{round((DF_FluxoFiltrado['Fluxo de Pessoas'].sum()/DF_FluxoFiltradoAA['Fluxo de Pessoas'].sum()-1)*100,2)}%</p></div>', unsafe_allow_html=True)
-      st.markdown(f'<div class="bloco-de-info" style = "margin: 2px auto;"><h3>Média por mês</h3><p>{ProcTab.formata_numero(DF_FluxoFiltrado.groupby('Mês')['Fluxo de Pessoas'].sum().mean().astype(int))}</p></div>', unsafe_allow_html=True)
-      st.markdown(f'<div class="bloco-de-info" style = "margin: 2px auto;"><h3>Fluxo de carros</h3><p>{ProcTab.formata_numero(DF_FluxoFiltrado['Fluxo de Carros'].sum().astype(int))}</p></div>', unsafe_allow_html=True)
-      st.markdown(f'<div class="bloco-de-info" style = "margin: 2px auto;"><h3>Receita</br>Estacionamento</h3><p>R${ProcTab.formata_numero(DF_FluxoFiltrado['Receita Total Sistema'].sum())}</p></div>', unsafe_allow_html=True)
+      st.metric('Fluxo de Pessoas', ProcTab.formata_numero(DF_FluxoFiltrado['Fluxo de Pessoas'].sum().astype(int)), 
+                delta = f'{round((DF_FluxoFiltrado['Fluxo de Pessoas'].sum()/DF_FluxoFiltradoAA['Fluxo de Pessoas'].sum()-1)*100,2)}% / A',
+                width="stretch",
+                border= True)
+      st.metric('Média por mês', ProcTab.formata_numero(DF_FluxoFiltrado.groupby('Mês')['Fluxo de Pessoas'].sum().mean().astype(int)),
+                width="stretch",
+                border= True)
+      st.metric('Fluxo de Carros', ProcTab.formata_numero(DF_FluxoFiltrado['Fluxo de Carros'].sum().astype(int)),
+                width="stretch",
+                border= True)
+      st.metric('Receita', ProcTab.formata_numero(DF_FluxoFiltrado['Receita Total Sistema'].sum()),
+                width="stretch",
+                border= True)
+      
   with colz:
       st.plotly_chart(fig, use_container_width=True)
 
