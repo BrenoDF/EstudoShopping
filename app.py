@@ -71,10 +71,6 @@ with st.sidebar.expander("Filtros Avançados", expanded=False):
 
 
 
-
-
-
-
 ## --------------------- Página principal ----------------------------------- ##
 
 
@@ -138,7 +134,6 @@ figVendatotal = px.line(
   color_discrete_map={'Venda':'#00b7db','VendaAA':'#000000'}, title='Vendas por Mês'
 )
 
-# hover templates
 for trace in figVendatotal.data:
     if trace.name == 'Venda':
         trace.hovertemplate = (
@@ -221,8 +216,8 @@ with tabMain:
   st.subheader("Vendas por Piso e Lado")
 
 
-  pisos = ['Piso 1', 'Piso 2', 'Piso 3']
-  lados = ['Lado A', 'Lado B']
+  pisos = ['PISO 1', 'PISO 2', 'PISO 3']
+  lados = ['LADO A', 'LADO B']
   
   def resumo_bloco(piso, lado):
     LojasSemFiltroPiso_e_Lado = DFLojas.loc[(DFLojas['Segmento'].isin(SegmentosSelecionados)) & (DFLojas['Data'] >= inicio) & (DFLojas['Data'] <= fim)]
@@ -264,7 +259,7 @@ with tabMain:
     # calcula métricas
     vendaAA_k  = ProcTab.formata_numero(soma_AA)
     venda_k    = ProcTab.formata_numero(soma)
-    cto_k      = ProcTab.formata_numero(cto/1000)
+    cto_k      = ProcTab.formata_numero(cto)
     cto_venda  = round(cto/soma*100, 2) if cto else 0
     variacao   = round((soma/soma_AA-1)*100, 2) if soma_AA else 0
     classeVarPiso = "positivo" if variacao >= 0 else "negativo"
@@ -280,8 +275,8 @@ with tabMain:
     <div class="linha">
       <div>VendaAA:<br><b>{vendaAA_k}</b></div>
       <div>Venda:<br><b>{venda_k}</b></div>
-      <div>CTO:<br><b>{cto_k}</b></div>
-      <div>CTO/Venda:<br><b>{cto_venda}%</b></div>
+      <div>CTO c.:<br><b>{cto_k}</b></div>
+      <div>CTO c./Venda:<br><b>{cto_venda}%</b></div>
     </div>
     <div class="linha-centralizada">
       <div>Variação:<br><span class="variacao {classeVarPiso}">{variacao}%</span></div>
