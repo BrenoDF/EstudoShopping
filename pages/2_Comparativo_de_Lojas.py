@@ -45,8 +45,8 @@ df_final_apenaslojas = pd.concat(dfs_apenaslojas, ignore_index=True)
 # -------------------------------SIDE BAR-------------------------------- #
 
 ## SIDE BAR ##
+mostrar_legenda = st.sidebar.toggle('Legenda no gráfico de Pizza?', value = True, key='toggle_legenda')
 st.sidebar.image(r'Imagens/NAVA-preta.png')
-
 
 # -------------------------------/SIDE BAR-------------------------------- #
 st.title("Comparativo de Lojas")
@@ -132,7 +132,7 @@ st.divider()
 #------------------------------- Comparativo por Classificação -------------------------------- #
 
 st.title("Comparativo de loja pela classificação")
-col1, col2 = st.columns([0.5, 0.5])
+col1, col2, col3 = st.columns([0.4, 0.4, 0.2])
 with col1:
     hoje2 = date.today()
     hoje2 = hoje2.replace(day=1)
@@ -151,23 +151,60 @@ with col1:
     fim2 = pd.to_datetime(fim2)
 
 
-df_apenaslojas_filtrado_final_2 = df_final_apenaslojas[(df_final_apenaslojas['Data'] >= inicio) & (df_final_apenaslojas['Data'] <= fim)]
+df_apenaslojas_filtrado_final_2 = df_final_apenaslojas[(df_final_apenaslojas['Data'] >= inicio2) & (df_final_apenaslojas['Data'] <= fim2)]
 
 
 with col2:
 
-    lojas_selecionadas2 = st.multiselect(
-        "Selecione as lojas",
+    lojas_selecionadas2 = st.selectbox(
+        "Selecione a loja",
         df_apenaslojas_filtrado_final_2['ID'].unique(),
-        default= None,
-        placeholder="Selecione as lojas",
-        key='multiselect2'
+        index= None,
+        placeholder="Selecione a loja",
+        key='select2'
     )
-    df_com_lojas_selecionadas2 = df_apenaslojas_filtrado_final_2[df_apenaslojas_filtrado_final_2['ID'].isin(lojas_selecionadas2)]
+    
+df_loja_selecionada_2 = df_apenaslojas_filtrado_final_2[df_apenaslojas_filtrado_final_2['ID']==(lojas_selecionadas2)]
+emp_selecionado = df_loja_selecionada_2['Empreendimento'].iloc[0] if not df_loja_selecionada_2.empty else None
+
+if df_loja_selecionada_2.empty:
+    st.warning("Nenhuma loja selecionada ainda.")
+else:
+    class_selecionada = df_loja_selecionada_2['Classificação'].iloc[0]
+    if class_selecionada == 'Satélites' or class_selecionada == 'Quiosque':
+        opcoes_para_pills = ['Classificação', 'Segmento', 'Atividade']
+    else:
+        opcoes_para_pills = ['Classificação', 'Segmento']
+        
+    with col3:
+        pills2 = st.pills(
+            "Selecione o tipo de comparação",
+            options=opcoes_para_pills,
+            default='Classificação',
+            key='pills2'
+        )
+        
+    tipo_loja_selecionado = df_apenaslojas_filtrado_final_2[df_apenaslojas_filtrado_final_2['ID']==(lojas_selecionadas2)][pills2].iloc[0]
+    df_a_comparar = df_apenaslojas_filtrado_final_2[(df_apenaslojas_filtrado_final_2[pills2] == (tipo_loja_selecionado)) & (df_apenaslojas_filtrado_final_2['Empreendimento'] == emp_selecionado)]
+    total_df_a_comparar = df_a_comparar['Venda'].sum()
+    total_loja_selecionada = df_loja_selecionada_2['Venda'].sum()
+    delta_comparativo = ((total_loja_selecionada/total_df_a_comparar) *100).round(2) if total_df_a_comparar != 0 else 0
     
     
-    
-    
+    coluna1, coluna2 = st.columns([0.5, 0.5])
+    with coluna1:
+        fig2 = px.pie(df_a_comparar, names='ID', values='Venda', title=f'Participação de {lojas_selecionadas2} em {tipo_loja_selecionado} no {emp_selecionado}').update_traces(textposition='inside', textinfo='percent+label')
+        pull = [0.2 if loja == lojas_selecionadas2 else 0 for loja in df_a_comparar['ID']]
+        texto = [loja if loja == lojas_selecionadas2 else '' for loja in df_a_comparar['ID']]
+        fig2.update_traces(pull=pull, text = texto, textfont_size=14, textinfo="text+percent")
+        fig2.update_layout(showlegend=mostrar_legenda)
+        st.plotly_chart(fig2, key='grafico_pizza', use_container_width=True)
+    with coluna2:
+        df_grafico_bar_fig3 = pd.DataFrame({'Média das Lojas': [df_a_comparar['Venda'].mean()], f'{lojas_selecionadas2}': [df_loja_selecionada_2['Venda'].mean()]})
+        fig3 = px.bar(df_grafico_bar_fig3,barmode='group' , title=f'Venda média por loja comparado a média de {lojas_selecionadas2} em {tipo_loja_selecionado} no {emp_selecionado}')
+        fig3.update_layout(xaxis_title=None, yaxis_title=None)
+        st.plotly_chart(fig3, key='grafico_barra', use_container_width=True)
+    st.subheader(f"A loja :blue-background[{lojas_selecionadas2}] compõem cerca de :blue[{delta_comparativo}%] das vendas comparado a {tipo_loja_selecionado} no {emp_selecionado}.", width="stretch")
 # ------------------------------- Estilo CSS -------------------------------- #
 
 st.markdown(

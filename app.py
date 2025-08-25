@@ -20,7 +20,7 @@ initial_sidebar_state="collapsed")
 st.sidebar.image(r'Imagens/NAVA-preta.png')
 
 st.sidebar.header('Filtros')
-emp = st.sidebar.radio(    "Selecione o Empreendimento",
+emp = st.sidebar.radio("Selecione o Empreendimento",
     options=['Viashopping', 'Viabrasil'], index = 0)
 
 sss = st.sidebar.toggle("Vendas SSS",
@@ -43,15 +43,15 @@ inicio = inicio.replace(day=1)
 fim = fim.replace(day=1)
 inicio = pd.to_datetime(inicio)
 fim = pd.to_datetime(fim)
-segmentosUnicos = DFLojas['Segmento'].unique().tolist()
-segmentoInutil = ['Comodato', 'Depósito']
-default = [x for x in segmentosUnicos if x not in segmentoInutil]
+classificacao_unica = DFLojas['Classificação'].unique().tolist()
+classificacao_inutil = ['Comodato', 'Depósito']
+default = [x for x in classificacao_unica if x not in classificacao_inutil]
 
 with st.sidebar.expander("Filtros Avançados", expanded=False):
 
-    SegmentosSelecionados = st.pills(
-            'Selecione os segmentos que deseja visualizar',
-        options=segmentosUnicos,
+    ClassificacaoSelecionada = st.pills(
+            'Selecione as classificações que deseja visualizar',
+        options=classificacao_unica,
         selection_mode= 'multi',
         default= default
     )
@@ -77,7 +77,7 @@ with st.sidebar.expander("Filtros Avançados", expanded=False):
 st.title("Relatório de Performance - Grupo NA:blue[v]A")
 
 # Aplicando os Filtros do SideBar
-filtroSideBar = ((DFLojas['Segmento'].isin(SegmentosSelecionados)) &
+filtroSideBar = ((DFLojas['Classificação'].isin(ClassificacaoSelecionada)) &
     (DFLojas['Piso'].isin(PisosSelecionados)) &
     ((LadoSelecionado == 'Ambos')
       |
@@ -176,7 +176,7 @@ with tabMain:
 
   with col3:
       DF_ApenasLojasSegmentos = (
-      DFLojasAtual.groupby(['Data', 'Segmento'], as_index=False)
+      DFLojasAtual.groupby(['Data', 'Classificação'], as_index=False)
         [['Venda','VendaAA']]
         .sum().sort_values(by=['Data', 'Venda'], ascending=True)
         )
@@ -191,17 +191,17 @@ with tabMain:
       
       DF_ApenasLojasSegmentos['Data'] = DF_ApenasLojasSegmentos['Data'].dt.strftime('%m/%Y')
       
-      ordem = DF_ApenasLojasSegmentos.groupby('Segmento')['Venda'].sum().sort_values(ascending=False).index.tolist()
+      ordem = DF_ApenasLojasSegmentos.groupby('Classificação')['Venda'].sum().sort_values(ascending=False).index.tolist()
 
       fig = px.bar(
           DF_ApenasLojasSegmentos,
           x='Venda',
-          y='Segmento',
+          y='Classificação',
           orientation='h',
           hover_data=['VendaAA', 'Variacao', 'Data'],
-          color='Segmento',
+          color='Classificação',
           color_discrete_sequence=px.colors.sequential.Blues[::-1],
-          category_orders={'Segmento': ordem}, title='Vendas por Segmento',
+          category_orders={'Classificação': ordem}, title='Vendas por Classificação',
       )
       fig.update_layout(height=450,
                         showlegend=False)
@@ -220,8 +220,8 @@ with tabMain:
   lados = ['LADO A', 'LADO B']
   
   def resumo_bloco(piso, lado):
-    LojasSemFiltroPiso_e_Lado = DFLojas.loc[(DFLojas['Segmento'].isin(SegmentosSelecionados)) & (DFLojas['Data'] >= inicio) & (DFLojas['Data'] <= fim)]
-    LojasSemFiltroPiso_e_LadoAA = DFLojas.loc[(DFLojas['Segmento'].isin(SegmentosSelecionados)) & (DFLojas['Data'] >= inicio_aa) & (DFLojas['Data'] <= fim_aa)]
+    LojasSemFiltroPiso_e_Lado = DFLojas.loc[(DFLojas['Segmento'].isin(ClassificacaoSelecionada)) & (DFLojas['Data'] >= inicio) & (DFLojas['Data'] <= fim)]
+    LojasSemFiltroPiso_e_LadoAA = DFLojas.loc[(DFLojas['Segmento'].isin(ClassificacaoSelecionada)) & (DFLojas['Data'] >= inicio_aa) & (DFLojas['Data'] <= fim_aa)]
 
     ## SSS dos PISOS ##
     if sss:
@@ -265,7 +265,7 @@ with tabMain:
     classeVarPiso = "positivo" if variacao >= 0 else "negativo"
     total_piso = round(
         (soma / DFLojas.loc[
-          filtroDataSelecionada & DFLojas['Segmento'].isin(SegmentosSelecionados)
+          filtroDataSelecionada & DFLojas['Segmento'].isin(ClassificacaoSelecionada)
         ]['Venda'].sum()*100), 2
     ) if soma else 0
 

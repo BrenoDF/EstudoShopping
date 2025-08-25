@@ -23,13 +23,19 @@ def TabelaOriginal(emp):
         PosicaoVS = pd.read_excel(path1, sheet_name='PosicaoPamp')
         df_fluxo = pd.read_excel(pathFluxoVB)
 
-
+    desconto = pd.read_excel('./Desconto.xlsx') 
+    inadimplencia = pd.read_excel('./Inadimplência.xlsx')
+    desconto = desconto[desconto['Empreendimento'] == emp] 
+    inadimplencia = inadimplencia[inadimplencia['Empreendimento'] == emp] 
+    inadimplencia['Data']= pd.to_datetime(inadimplencia['Data'])
+    desconto = desconto.groupby(['Luc', 'Nome Fantasia', 'Data', 'Empreendimento'])['Desconto'].sum().reset_index()
+    inadimplencia = inadimplencia.groupby(['Luc', 'Nome Fantasia', 'Data', 'Empreendimento'])['Inadimplência'].sum().reset_index()
+    
     ComposicaoData = Composicao["Data"]
     Composicao = Composicao.iloc[:,4:-4]
     Composicao['Data'] = ComposicaoData
     Composicao['ID'] = Composicao['Luc'].astype(str) + "_" + Composicao['Nome Fantasia']
     Composicao['ID'] = Composicao['ID'].str.upper()
-
 
     ClassVS.drop(columns = ['Empreendimento', 'ID_Class', 'Tempo permanência'], inplace= True)
     ClassVS["ID"] = ClassVS["Luc"].astype(str) + "_" + ClassVS['Nome Fantasia']
@@ -85,7 +91,10 @@ def TabelaOriginal(emp):
     colunasDF.remove('Data')
     colunasDF = ['Data'] + colunasDF
     DF_ApenasLojas = DF_ApenasLojas[colunasDF]
-
+    DF_ApenasLojas = DF_ApenasLojas.merge(desconto[['Luc', 'Nome Fantasia', 'Data', 'Desconto']], how = 'left', on = ['Luc', 'Nome Fantasia', 'Data'])
+    DF_ApenasLojas = DF_ApenasLojas.merge(inadimplencia[['Luc', 'Nome Fantasia', 'Data', 'Inadimplência']], how = 'left', on = ['Luc', 'Nome Fantasia', 'Data'])
+### ATENÇÃO, TALVEZ ESSES DOIS MERGES ACIMA POSSAM GERAR PROBLEMAS DE PROCESSAMENTO, ALTERANDO OS VALORES DE VENDAS, CASO ACONTEÇA BASTA REMOVER ######
+    
     return (CompClassPos,DF_Fluxo, DF_ApenasLojas)
 def formata_numero(valor, prefixo = ''):
     for unidade in ['', 'mil']:
