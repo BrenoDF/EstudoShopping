@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Painel – Mock</title>
+    <style>
+        :root {
+            --bg: #f6f7fb;
+            --card: #ffffff;
+            --ink: #111827;
+            --muted: #6b7280;
+            --accent: #0ea5e9;
+            --ok: #16a34a;
+            --warn: #ef4444;
+            --shadow: 0 8px 20px rgba(17, 24, 39, .08);
+            --radius: 16px;
+        }
+
+        html,
+        body {
+            height: 100%
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--ink);
+            font: 500 15px/1.4 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+        }
+
+        .wrap {
+            max-width: 1200px;
+            margin: 32px auto;
+            padding: 0 16px;
+        }
+
+        .title {
+            font-size: 56px;
+            font-weight: 800;
+            letter-spacing: .5px;
+            margin: 0 0 8px 0;
+        }
+
+        /* grade principal: coluna estreita à esquerda + área grande à direita */
+        .main {
+            display: grid;
+            grid-template-columns: 420px 1fr;
+            gap: 28px;
+            align-items: start;
+        }
+
+        @media (max-width: 1024px) {
+            .main {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* faixa superior de KPIs */
+        .kpis {
+            display: grid;
+            grid-template-columns: repeat(6, minmax(140px, 1fr));
+            gap: 14px;
+            margin: 12px 0 20px 0;
+        }
+
+        @media (max-width: 1200px) {
+            .kpis {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .kpis {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 12px 14px;
+        }
+
+        .kpi .label {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: var(--muted);
+            letter-spacing: .06em;
+        }
+
+        .kpi .value {
+            font-size: 20px;
+            font-weight: 800;
+            margin-top: 4px;
+        }
+
+        .kpi small {
+            font-weight: 700;
+            margin-left: 6px;
+        }
+
+        .ok {
+            color: var(--ok);
+        }
+
+        .warn {
+            color: var(--warn);
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        /* coluna esquerda com blocos empilhados */
+        .left .stack {
+            display: grid;
+            gap: 12px;
+        }
+
+        .left .stack .group-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin: 4px 0 2px 6px;
+            letter-spacing: .06em;
+        }
+
+        .pair {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .metric-title {
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 4px;
+        }
+
+        .metric-value {
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        /* painel vazio para o gráfico */
+        .chart-area {
+            background: repeating-linear-gradient(45deg, #eef2ff, #eef2ff 10px, #ffffff 10px, #ffffff 20px);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            min-height: 640px;
+            /* altura padrão – ajuste no Streamlit */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chart-area .hint {
+            text-align: center;
+            color: #64748b;
+            font-size: 14px;
+            max-width: 520px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <h1 class="title">Nome_Loja</h1>
+
+        <!-- KPIs do topo -->
+        <section class="kpis">
+            <div class="card kpi">
+                <div class="label">Vendas</div>
+                <div class="value">venda_valor</div>
+            </div>
+            <div class="card kpi">
+                <div class="label">Vendas AA</div>
+                <div class="value">vendaaa_valor</div>
+            </div>
+            <div class="card kpi">
+                <div class="label">Var. Vendas AA</div>
+                <div class="value ok">var_venda_aa_valor</div>
+            </div>
+            <div class="card kpi">
+                <div class="label">Venda Ideal</div>
+                <div class="value">venda_ideal_valor</div>
+            </div>
+            <div class="card kpi">
+                <div class="label">Venda Ideal</div>
+                <div class="value ok">venda_x_ideal_valor</div>
+            </div>
+            <div class="card kpi">
+                <div class="label">Venda Média Período</div>
+                <div class="value">venda_media_valor</div>
+            </div>
+        </section>
+
+        <section class="main">
+            <!-- Coluna esquerda -->
+            <div class="left">
+                <div class="stack">
+                    <div class="pair">
+                        <div class="card">
+                            <div class="metric-title">Aluguel</div>
+                            <div class="metric-value">aluguel_valor</div>
+                        </div>
+                        <div class="card">
+                            <div class="metric-title">m²</div>
+                            <div class="metric-value">m2_valor</div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="metric-title">Venda / m²</div>
+                        <div class="metric-value">venda_por_m2_valor</div>
+                    </div>
+
+                    <div class="pair">
+                        <div class="card">
+                            <div class="metric-title">Venda / Cto Comum</div>
+                            <div class="metric-value ok">venda_por_cto_comum_valor</div>
+                        </div>
+                        <div class="card">
+                            <div class="metric-title">Inadimplência do mês</div>
+                            <div class="metric-value warn">inadimplencia_mes_valor</div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="metric-title">CTO Comum</div>
+                        <div class="metric-value">cto_comum_valor</div>
+                    </div>
+
+                    <div class="pair">
+                        <div class="card">
+                            <div class="metric-title">Nao sei</div>
+                            <div class="metric-value">nao_sei_valor</div>
+                        </div>
+                        <div class="card">
+                            <div class="metric-title">Desconto</div>
+                            <div class="metric-value muted">desconto_valor</div>
+                        </div>
+                    </div>
+
+                    <div class="pair">
+                        <div class="card">
+                            <div class="metric-title">CTO Total</div>
+                            <div class="metric-value">cto_total_valor</div>
+                        </div>
+                        <div class="card">
+                            <div class="metric-title">Inadimplência Total</div>
+                            <div class="metric-value warn">inadimplencia_valor</div>
+                        </div>
+                    </div>
+
+                    <div class="pair">
+                        <div class="card">
+                            <div class="metric-title">CTO Médio Seg.</div>
+                            <div class="metric-value">cto_medio_seg</div>
+                        </div>
+                        <div class="card">
+                            <div class="metric-title">CTO Médio Piso</div>
+                            <div class="metric-value">cto_medio_piso</div>
+                        </div>
+                    </div>
+
+                    <div class="pair">
+                        <div class="card">
+                            <div class="metric-title">CTO/m² Seg.</div>
+                            <div class="metric-value">cto_por_m2_seg_valor</div>
+                        </div>
+                        <div class="card">
+                            <div class="metric-title">CTO/m²</div>
+                            <div class="metric-value">cto_por_m2_valor</div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="metric-title">CTO/m² Med. Piso</div>
+                        <div class="metric-value">cto_por_m2_media_piso_valor</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Painel (vazio) do gráfico -->
+            <div class="chart-area" id="chart-area">
+                <div class="hint">
+                    <strong>Painel do Gráfico</strong><br>
+                    Use este espaço no Streamlit para renderizar um gráfico (Plotly, Matplotlib, Altair).
+                    Você também pode injetar um gráfico como <em>iframe</em> ou imagem base64 se preferir manter tudo
+                    dentro do componente.
+                </div>
+            </div>
+        </section>
+    </div>
+</body>
+
+</html>

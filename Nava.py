@@ -10,15 +10,13 @@ from dateutil.relativedelta import relativedelta
 st.set_page_config(layout="wide",
 page_title= 'Relatório Nava',
 initial_sidebar_state="collapsed")
-
+st.logo('Imagens/NAVA-preta.png', icon_image='Imagens/NAVA-preta.png', size='large')
 
 
 # -------------------------------SIDE BAR-------------------------------- #
 
 
 ## SIDE BAR ##
-st.sidebar.image(r'Imagens/NAVA-preta.png')
-
 st.sidebar.header('Filtros')
 emp = st.sidebar.radio("Selecione o Empreendimento",
     options=['Viashopping', 'Viabrasil'], index = 0)
@@ -27,7 +25,7 @@ sss = st.sidebar.toggle("Vendas SSS",
     value=False,
     help="Vendas Same Store Sales (Vendas de lojas abertas há mais de 12 meses).")
 
-ResumoLojas, DF_Fluxo, DFLojas = ProcTab.TabelaOriginal(emp)
+DF_Fluxo, DFLojas = ProcTab.TabelaOriginal(emp)
 
 hoje = date.today()
 hoje = hoje.replace(day=1)
@@ -74,7 +72,7 @@ with st.sidebar.expander("Filtros Avançados", expanded=False):
 ## --------------------- Página principal ----------------------------------- ##
 
 
-st.title("Relatório de Performance - Grupo NA:blue[v]A")
+st.title("Relatório de Performance")
 
 # Aplicando os Filtros do SideBar
 filtroSideBar = ((DFLojas['Classificação'].isin(ClassificacaoSelecionada)) &
@@ -175,26 +173,26 @@ with tabMain:
                 )
 
   with col3:
-      DF_ApenasLojasSegmentos = (
+      DF_ApenasLojasClassificacao = (
       DFLojasAtual.groupby(['Data', 'Classificação'], as_index=False)
         [['Venda','VendaAA']]
         .sum().sort_values(by=['Data', 'Venda'], ascending=True)
         )
       
-      DF_ApenasLojasSegmentos['Venda'] = DF_ApenasLojasSegmentos['Venda'].apply(lambda x: round(x, 2))
-      DF_ApenasLojasSegmentos['VendaAA'] = DF_ApenasLojasSegmentos['VendaAA'].apply(lambda x: round(x, 2))
+      DF_ApenasLojasClassificacao['Venda'] = DF_ApenasLojasClassificacao['Venda'].apply(lambda x: round(x, 2))
+      DF_ApenasLojasClassificacao['VendaAA'] = DF_ApenasLojasClassificacao['VendaAA'].apply(lambda x: round(x, 2))
       
       
       
-      DF_ApenasLojasSegmentos['Variacao'] = round((DF_ApenasLojasSegmentos['Venda'] / DF_ApenasLojasSegmentos['VendaAA'] - 1)*100,2)
-      DF_ApenasLojasSegmentos['Variacao'] = DF_ApenasLojasSegmentos['Variacao'].apply(lambda x: f"{x:.2f}%" if x >= 0 else f"{x:.2f}%")
+      DF_ApenasLojasClassificacao['Variacao'] = round((DF_ApenasLojasClassificacao['Venda'] / DF_ApenasLojasClassificacao['VendaAA'] - 1)*100,2)
+      DF_ApenasLojasClassificacao['Variacao'] = DF_ApenasLojasClassificacao['Variacao'].apply(lambda x: f"{x:.2f}%" if x >= 0 else f"{x:.2f}%")
       
-      DF_ApenasLojasSegmentos['Data'] = DF_ApenasLojasSegmentos['Data'].dt.strftime('%m/%Y')
+      DF_ApenasLojasClassificacao['Data'] = DF_ApenasLojasClassificacao['Data'].dt.strftime('%m/%Y')
       
-      ordem = DF_ApenasLojasSegmentos.groupby('Classificação')['Venda'].sum().sort_values(ascending=False).index.tolist()
+      ordem = DF_ApenasLojasClassificacao.groupby('Classificação')['Venda'].sum().sort_values(ascending=False).index.tolist()
 
       fig = px.bar(
-          DF_ApenasLojasSegmentos,
+          DF_ApenasLojasClassificacao,
           x='Venda',
           y='Classificação',
           orientation='h',
@@ -216,12 +214,12 @@ with tabMain:
   st.subheader("Vendas por Piso e Lado")
 
 
-  pisos = ['PISO 1', 'PISO 2', 'PISO 3']
+  pisos = ['PISO 1', 'PISO 2', 'PISO 3', 'PISO 4']
   lados = ['LADO A', 'LADO B']
   
   def resumo_bloco(piso, lado):
-    LojasSemFiltroPiso_e_Lado = DFLojas.loc[(DFLojas['Segmento'].isin(ClassificacaoSelecionada)) & (DFLojas['Data'] >= inicio) & (DFLojas['Data'] <= fim)]
-    LojasSemFiltroPiso_e_LadoAA = DFLojas.loc[(DFLojas['Segmento'].isin(ClassificacaoSelecionada)) & (DFLojas['Data'] >= inicio_aa) & (DFLojas['Data'] <= fim_aa)]
+    LojasSemFiltroPiso_e_Lado = DFLojas.loc[(DFLojas['Classificação'].isin(ClassificacaoSelecionada)) & (DFLojas['Data'] >= inicio) & (DFLojas['Data'] <= fim)]
+    LojasSemFiltroPiso_e_LadoAA = DFLojas.loc[(DFLojas['Classificação'].isin(ClassificacaoSelecionada)) & (DFLojas['Data'] >= inicio_aa) & (DFLojas['Data'] <= fim_aa)]
 
     ## SSS dos PISOS ##
     if sss:
@@ -265,7 +263,7 @@ with tabMain:
     classeVarPiso = "positivo" if variacao >= 0 else "negativo"
     total_piso = round(
         (soma / DFLojas.loc[
-          filtroDataSelecionada & DFLojas['Segmento'].isin(ClassificacaoSelecionada)
+          filtroDataSelecionada & DFLojas['Classificação'].isin(ClassificacaoSelecionada)
         ]['Venda'].sum()*100), 2
     ) if soma else 0
 

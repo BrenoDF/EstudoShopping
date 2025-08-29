@@ -9,6 +9,7 @@ from datetime import date
 st.set_page_config(layout="wide",
 page_title= 'Relatório Nava',
 initial_sidebar_state="collapsed")
+st.logo('Imagens/NAVA-preta.png', icon_image='Imagens/NAVA-preta.png', size='large')
 
 # ------------------------------- Trazendo o DF Completo -------------------------------- #
 
@@ -19,22 +20,18 @@ dfs_fluxo = []
 dfs_apenaslojas = []
 
 for emp in empresas:
-    CompClassPos, DF_Fluxo, DF_ApenasLojas = ProcTab.TabelaOriginal(emp)
+    DF_Fluxo, DF_ApenasLojas = ProcTab.TabelaOriginal(emp)
 
     # anota a origem sem tocar na função
-    CompClassPos = CompClassPos.copy()
     DF_Fluxo = DF_Fluxo.copy()
     DF_ApenasLojas = DF_ApenasLojas.copy()
 
-    CompClassPos['Empreendimento'] = emp
     DF_Fluxo['Empreendimento'] = emp
     DF_ApenasLojas['Empreendimento'] = emp
 
-    dfs_compclasspos.append(CompClassPos)
     dfs_fluxo.append(DF_Fluxo)
     dfs_apenaslojas.append(DF_ApenasLojas)
 
-df_final_compclasspos = pd.concat(dfs_compclasspos, ignore_index=True)
 df_final_fluxo = pd.concat(dfs_fluxo)  # mantém o índice Data
 df_final_apenaslojas = pd.concat(dfs_apenaslojas, ignore_index=True)
 
@@ -46,7 +43,6 @@ df_final_apenaslojas = pd.concat(dfs_apenaslojas, ignore_index=True)
 
 ## SIDE BAR ##
 mostrar_legenda = st.sidebar.toggle('Legenda no gráfico de Pizza?', value = True, key='toggle_legenda')
-st.sidebar.image(r'Imagens/NAVA-preta.png')
 
 # -------------------------------/SIDE BAR-------------------------------- #
 st.title("Comparativo de Lojas")
@@ -242,7 +238,6 @@ else:
                                                                         & (df_apenaslojas_filtrado_final_2['Lado'] == lado_loja_selecionada)]
         
     media_todas_lojas_piso = df_a_comparar_com_piso[verba_selecionada2].mean()
-
     coluna_piso1, coluna_piso2 = st.columns([0.5,0.5])
     subcoluna1_piso, subcoluna2_piso, subcoluna3_piso = st.columns([0.1, 0.8, 0.1])
     with coluna_piso1:
@@ -259,7 +254,6 @@ else:
         fig3.update_layout(xaxis_title=None, yaxis_title=None, legend = {'orientation': 'h'})
         st.plotly_chart(fig3, key='grafico_barraPiso', use_container_width=True)
     with subcoluna2_piso:
-        st.markdown(f"A loja :blue-background[{lojas_selecionadas2}] compõem cerca de :blue[{delta_comparativo}%] de {verba_selecionada2} comparado a {tipo_loja_selecionado} e uma diferença de **R${abs(media_loja_unica-media_todas_lojas).round(2)}** na média entre eles no {emp_selecionado}.", width="stretch")
         st.toggle("Expandir tabela", key='toggle_tabela_comparativo2')
     if st.session_state['toggle_tabela_comparativo2']:
         st.dataframe(df_a_comparar_com_piso, use_container_width=True, hide_index=True)

@@ -93,9 +93,8 @@ def TabelaOriginal(emp):
     DF_ApenasLojas = DF_ApenasLojas[colunasDF]
     DF_ApenasLojas = DF_ApenasLojas.merge(desconto[['Luc', 'Nome Fantasia', 'Data', 'Desconto']], how = 'left', on = ['Luc', 'Nome Fantasia', 'Data'])
     DF_ApenasLojas = DF_ApenasLojas.merge(inadimplencia[['Luc', 'Nome Fantasia', 'Data', 'Inadimplência']], how = 'left', on = ['Luc', 'Nome Fantasia', 'Data'])
-### ATENÇÃO, TALVEZ ESSES DOIS MERGES ACIMA POSSAM GERAR PROBLEMAS DE PROCESSAMENTO, ALTERANDO OS VALORES DE VENDAS, CASO ACONTEÇA BASTA REMOVER ######
     
-    return (CompClassPos,DF_Fluxo, DF_ApenasLojas)
+    return (DF_Fluxo, DF_ApenasLojas)
 def formata_numero(valor, prefixo = ''):
     for unidade in ['', 'mil']:
         if valor <1000:
