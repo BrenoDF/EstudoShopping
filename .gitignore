@@ -1,3 +1,6 @@
 __pychache__/
 .venv/
 teste.py
+Dockerfile
+docker-compose.yaml
+README.md

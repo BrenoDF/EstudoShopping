@@ -82,10 +82,22 @@ loja = df_apenaslojas_filtrado_final[df_apenaslojas_filtrado_final['ID']==loja_s
 classificacao_selecionada = df_apenaslojas_filtrado_final[df_apenaslojas_filtrado_final['ID']==loja_selecionada]['Classificação'].iloc[0]
 segmento_selecionado = df_apenaslojas_filtrado_final[df_apenaslojas_filtrado_final['ID']==loja_selecionada]['Segmento'].iloc[0]
 venda_media = loja['Venda'].mean()
+regras = {
+      'Âncoras': 0.05, 
+      'Conveniência / Serviços': 0.15, 
+      'Satélites': 0.15, 
+      'Semi Âncoras': 0.05,
+      'Mega Lojas': 0.01,  
+      'Entretenimento': 0.15, 
+      'Quiosque':0.15
+}
+regra_map = regras[classificacao_selecionada]
+loja['Venda Ideal'] = loja['CTO Comum']*regra_map
 loja = loja.groupby(['Luc','Nome Fantasia']).agg({
     'M2': 'last',
     'Venda': 'sum',
     'VendaAA': 'sum',
+    'Venda Ideal': 'sum',
     'Aluguel': 'sum',
     'Encargo Comum': 'sum',
     'F.Reserva Enc.Comum': 'sum',
@@ -103,6 +115,7 @@ loja = loja.groupby(['Luc','Nome Fantasia']).agg({
     
 }).reset_index()
 
+m2 = loja['M2'].item()
 venda = arrendondador(loja['Venda'].item())
 venda_aa = arrendondador(loja['VendaAA'].item())
 aluguel = arrendondador(loja['Aluguel'].item())
@@ -110,37 +123,26 @@ aluguel = arrendondador(loja['Aluguel'].item())
 if venda_aa == 0:
     variacao_venda = None  # ou 0, ou float('nan'), depende da sua regra de negócio
 else:
-    variacao_venda = arrendondador(((venda / venda_aa) * 100) - 1)
+    variacao_venda = arrendondador(((venda / venda_aa) -1) * 100)
 
 with open("painel_compacto_analise_loja.html", "r", encoding="utf-8") as f:
     html = f.read()
 
-regras = {
-      'Âncoras': 0.05, 
-      'Conveniência / Serviços': 0.15, 
-      'Satélites': 0.15, 
-      'Semi Âncoras': 0.05,
-      'Mega Lojas': 0.01,  
-      'Entretenimento': 0.15, 
-      'Quiosque':0.15
-}
-m2 = loja['M2'].item()
-regra_map = regras[classificacao_selecionada]
-venda_x_ideal = (loja['Venda'].item()/(loja['CTO Comum'].item()*regra_map)-1)*100
 nome = loja['Nome Fantasia'].item()
 venda_p_m2 = arrendondador(venda/m2)
+venda_por_cto_comum = arrendondador(loja['Venda'].item()/loja['CTO Comum'].item())
 
 html = html.replace('class="title">Nome_Loja', f'class="title">{nome}')
 html = html.replace('class="value">venda_valor', f'class="value">{venda}')
 html = html.replace('class="value">vendaaa_valor', f'class="value">{venda_aa}')
-html = html.replace('class="value ok">var_venda_aa_valor', f'class="value {cls(variacao_venda)}">{variacao_venda}')
-html = html.replace('class="value">venda_ideal_valor', f'class="value">{arrendondador(loja['CTO Comum'].item()*regra_map)}')
-html = html.replace('class="value ok">venda_x_ideal_valor', f'class="value {cls(venda_x_ideal)}">{arrendondador(venda_x_ideal)}')
+html = html.replace('class="value ok">var_venda_aa_valor', f'class="value {cls(variacao_venda)}">{variacao_venda}{"%" if variacao_venda is not None else ""}')
+html = html.replace('class="value">m2_valor', f'class="value">{m2}')
+html = html.replace('class="value">venda_ideal_valor', f'class="value">{arrendondador(loja["Venda Ideal"].item())}')
 html = html.replace('class="value">venda_media_valor', f'class="value">{arrendondador(venda_media)}')
 html = html.replace('class="metric-value">aluguel_valor', f'class="metric-value">{aluguel}')
-html = html.replace('class="metric-value">m2_valor', f'class="metric-value">{m2}')
 html = html.replace('class="metric-value">venda_por_m2_valor', f'class="metric-value">{venda_p_m2}')
-html = html.replace('class="metric-value">venda_por_m2_valor', f'class="metric-value">{venda_p_m2}')
+html = html.replace('class="metric-value ok">venda_por_cto_comum_valor', f'class="metric-value {"ok" if venda_por_cto_comum<=regra_map else "warn"}">{venda_por_cto_comum}')
+html = html.replace('class="metric-value warn">inadimplencia_mes_valor', f'class="metric-value {'' if loja["Inadimplência"].item() else 'warn'}">{arrendondador(loja["Inadimplência"].item())}')
 
 
 st.html(html)

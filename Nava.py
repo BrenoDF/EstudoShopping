@@ -3,7 +3,6 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 from datetime import date
-from graphviz import Digraph
 from dateutil.relativedelta import relativedelta
 
 # Configurações de página
