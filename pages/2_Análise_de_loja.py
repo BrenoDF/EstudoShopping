@@ -51,7 +51,7 @@ def arrendondador(valor):
 ## SIDE BAR ##
 
 # -------------------------------/SIDE BAR-------------------------------- #
-st.title("Análise de Loja")
+# st.title("Análise de Loja")
 hoje = date.today()
 hoje = hoje.replace(day=1)
 
@@ -188,7 +188,7 @@ html = html.replace('class="value">venda_ideal_valor', f'class="value">{arrendon
 html = html.replace('class="value">venda_media_valor', f'class="value">{arrendondador(venda_media)}')
 html = html.replace('class="metric-value">aluguel_valor', f'class="metric-value muted">{aluguel}')
 html = html.replace('class="metric-value">venda_por_m2_valor', f'class="metric-value muted">{venda_p_m2}')
-html = html.replace('class="metric-value ok">venda_por_cto_comum_valor', f'class="metric-value {"ok" if venda_por_cto_comum<=regra_map else "warn"}">{venda_por_cto_comum}')
+html = html.replace('class="metric-value ok">venda_por_cto_comum_valor', f'class="metric-value {"ok" if venda_por_cto_comum<=regra_map else "warn"}">{venda_por_cto_comum}%')
 html = html.replace('class="metric-value warn">inadimplencia_mes_valor', f'class="metric-value {'muted' if loja["Inadimplência"].item() == 0 else 'warn'}">{arrendondador(loja["Inadimplência"].item())}')
 html = html.replace('class="metric-value warn">desconto_valor', f'class="metric-value {'muted' if loja["Desconto"].item() == 0 else 'warn'}">{arrendondador(loja["Desconto"].item())}')
 html = html.replace('class="metric-value">cto_comum_valor', f'class="metric-value muted">{arrendondador(loja["CTO Comum"].item())}')

@@ -149,8 +149,7 @@ tabMain, tabDF =  st.tabs(["Resumos", "Tabelas"]) ## Criação das abas
 
 
 with tabMain:
-  st.title('Resumos')
-  st.divider()
+
   st.header("Vendas Totais")
   col1, col2, col3 = st.columns([0.43,0.14,0.43], gap="large")
   with col1:
@@ -456,8 +455,7 @@ criticoCTOAlto = VendaMenorQueAA[(VendaMenorQueAA['CTO Comum/Venda'] > VendaMeno
 st.dataframe(criticoCTOAlto.reset_index(drop=True), use_container_width=True, hide_index=True)
 
 with tabDF:
-  st.title("Tabelas")
-  st.divider()
+
   st.subheader("Tabela de Lojas")
   st.dataframe(DFLojasAtual, use_container_width=True, hide_index=True, column_config={
     'Data': st.column_config.DateColumn(
