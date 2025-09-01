@@ -37,7 +37,7 @@
         }
 
         .title {
-            font-size: 56px;
+            font-size: 46px;
             font-weight: 800;
             letter-spacing: .5px;
             margin: 0 0 8px 0;
@@ -147,11 +147,7 @@
 
         /* painel vazio para o gráfico */
         .chart-area {
-            background: repeating-linear-gradient(45deg, #eef2ff, #eef2ff 10px, #ffffff 10px, #ffffff 20px);
             border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            min-height: 640px;
-            /* altura padrão – ajuste no Streamlit */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -161,7 +157,6 @@
             text-align: center;
             color: #64748b;
             font-size: 14px;
-            max-width: 520px;
         }
     </style>
 </head>
@@ -204,27 +199,22 @@
                 <div class="stack">
                     <div class="pair">
                         <div class="card">
+                            <div class="metric-title">Venda / M²</div>
+                            <div class="metric-value">venda_por_m2_valor</div>
+                        </div>
+                        <div class="card">
                             <div class="metric-title">Aluguel</div>
                             <div class="metric-value">aluguel_valor</div>
                         </div>
-                        <div class="card">
-                            <div class="metric-title">m²</div>
-                            <div class="metric-value">m2_valor</div>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <div class="metric-title">Venda / m²</div>
-                        <div class="metric-value">venda_por_m2_valor</div>
                     </div>
 
                     <div class="pair">
                         <div class="card">
-                            <div class="metric-title">Venda / Cto Comum</div>
-                            <div class="metric-value ok">venda_por_cto_comum_valor</div>
+                            <div class="metric-title">Desconto</div>
+                            <div class="metric-value warn">desconto_valor</div>
                         </div>
                         <div class="card">
-                            <div class="metric-title">Inadimplência do mês</div>
+                            <div class="metric-title">Inadimplência Total</div>
                             <div class="metric-value warn">inadimplencia_mes_valor</div>
                         </div>
                     </div>
@@ -236,12 +226,12 @@
 
                     <div class="pair">
                         <div class="card">
-                            <div class="metric-title">Nao sei</div>
-                            <div class="metric-value">nao_sei_valor</div>
+                            <div class="metric-title">Venda por CTO Comum</div>
+                            <div class="metric-value ok">venda_por_cto_comum_valor</div>
                         </div>
                         <div class="card">
-                            <div class="metric-title">Desconto</div>
-                            <div class="metric-value muted">desconto_valor</div>
+                            <div class="metric-title">CTO Comum / M²</div>
+                            <div class="metric-value">cto_comum_por_m2</div>
                         </div>
                     </div>
 
@@ -251,47 +241,34 @@
                             <div class="metric-value">cto_total_valor</div>
                         </div>
                         <div class="card">
-                            <div class="metric-title">Inadimplência Total</div>
-                            <div class="metric-value warn">inadimplencia_valor</div>
-                        </div>
-                    </div>
-
-                    <div class="pair">
-                        <div class="card">
-                            <div class="metric-title">CTO Médio Seg.</div>
-                            <div class="metric-value">cto_medio_seg</div>
-                        </div>
-                        <div class="card">
-                            <div class="metric-title">CTO Médio Piso</div>
-                            <div class="metric-value">cto_medio_piso</div>
-                        </div>
-                    </div>
-
-                    <div class="pair">
-                        <div class="card">
-                            <div class="metric-title">CTO/m² Seg.</div>
-                            <div class="metric-value">cto_por_m2_seg_valor</div>
-                        </div>
-                        <div class="card">
-                            <div class="metric-title">CTO/m²</div>
-                            <div class="metric-value">cto_por_m2_valor</div>
+                            <div class="metric-title">Taxa de Conversão</div>
+                            <div class="metric-value">conversao_valor</div>
                         </div>
                     </div>
 
                     <div class="card">
-                        <div class="metric-title">CTO/m² Med. Piso</div>
-                        <div class="metric-value">cto_por_m2_media_piso_valor</div>
+                        <div class="metric-title">Segmento e Piso</div>
+                        <div class="metric-value muted">segmento_e_piso</div>
                     </div>
+
+                    <div class="pair">
+                        <div class="card">
+                            <div class="metric-title">Venda Média do Segmento</div>
+                            <div class="metric-value">venda_media_segmento</div>
+                        </div>
+                        <div class="card">
+                            <div class="metric-title">Venda Média do Piso</div>
+                            <div class="metric-value">venda_media_piso</div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
-            <!-- Painel (vazio) do gráfico -->
+            <!-- Área do gráfico de volta -->
             <div class="chart-area" id="chart-area">
                 <div class="hint">
-                    <strong>Painel do Gráfico</strong><br>
-                    Use este espaço no Streamlit para renderizar um gráfico (Plotly, Matplotlib, Altair).
-                    Você também pode injetar um gráfico como <em>iframe</em> ou imagem base64 se preferir manter tudo
-                    dentro do componente.
+                    <!-- GRAFICO_AQUI -->
                 </div>
             </div>
         </section>
