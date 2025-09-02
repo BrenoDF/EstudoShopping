@@ -83,7 +83,7 @@ with comparativo_1:
     with col3:
         verba_selecionada = st.pills(
             "Selecione a verba",
-            options=['Venda', 'Aluguel', 'CTO Comum', 'CTOcomum/M²', 'CTO Comum/Venda'],
+            options=['Venda', 'Aluguel', 'CTO Comum', 'CTOcomum/M²', 'CTO Comum/Venda','Aluguel/M²'],
             default='Venda'
         )
     col1, col2 = st.columns([0.8, 0.2])
@@ -187,7 +187,7 @@ with comparativo_2:
         with col4:
             verba_selecionada2 = st.radio(
                 "Selecione a verba",
-                options=['Venda','CTO Comum']
+                options=['Venda','CTO Comum', 'Aluguel/M²']
             )
             
         tipo_loja_selecionado = df_apenaslojas_filtrado_final_2[df_apenaslojas_filtrado_final_2['ID']==(lojas_selecionadas2)][pills2].iloc[0]

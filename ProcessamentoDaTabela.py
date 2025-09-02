@@ -80,6 +80,7 @@ def TabelaOriginal(emp):
     CompClassPos['CTO Comum'] = CompClassPos['Aluguel'] + CompClassPos['Fundo Promoção'] + CompClassPos['Encargo Comum'] + CompClassPos['F.Reserva Enc.Comum']
     CompClassPos.rename(columns = {'Total': 'CTO Total'}, inplace = True)
     CompClassPos['Venda/M²'] = CompClassPos['Venda'] / CompClassPos['M2']
+    CompClassPos['Aluguel/M²'] = CompClassPos['Aluguel'] / CompClassPos['M2']
     CompClassPos['CTOcomum/M²'] = CompClassPos['CTO Comum'] / CompClassPos['M2']
     CompClassPos['CTO Total/M²'] = CompClassPos['CTO Total'] / CompClassPos['M2']
     CompClassPos['CTO Total/Venda'] = [round(((x/y)*100), 2) if y!=0 else np.nan for x, y in zip(CompClassPos['CTO Total'] , CompClassPos['Venda'])]

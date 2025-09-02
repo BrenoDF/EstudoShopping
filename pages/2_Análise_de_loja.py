@@ -56,15 +56,13 @@ hoje = date.today()
 hoje = hoje.replace(day=1)
 
 sliderIntervalo = st.sidebar.date_input("Período",
-                    value = (date(2025,1,1),df_final_apenaslojas['Data'].max()),
+                    value = (date(2025,1,1),df_final_fluxo[df_final_fluxo['Fluxo de Carros']>0].index.max()),
                     min_value=date(2018,1,1),
-                    max_value=df_final_apenaslojas['Data'].max(),
+                    max_value=df_final_fluxo[df_final_fluxo['Fluxo de Carros']>0].index.max(),
                     format= "DD/MM/YYYY",
                     key='date_input1'
 )
 inicio, fim = sliderIntervalo
-inicio = inicio.replace(day=1)
-fim = fim.replace(day=1)
 inicio = pd.to_datetime(inicio)
 fim = pd.to_datetime(fim)
 
@@ -157,6 +155,7 @@ else:
     venda = arrendondador(loja['Venda'].item())
     venda_aa = arrendondador(loja['VendaAA'].item())
     aluguel = arrendondador(loja['Aluguel'].item())
+    aluguel_m2 = arrendondador(loja['Aluguel'].item()/m2)
 
     if venda_aa == 0:
         variacao_venda = None  # ou 0, ou float('nan'), depende da sua regra de negócio
@@ -205,7 +204,7 @@ else:
     html = html.replace('class="metric-value muted">segmento_e_piso', f'class="metric-value muted">{segmento_selecionado} / {piso_selecionado} - {lado_selecionado}')
     html = html.replace('class="metric-value">venda_media_segmento', f'class="metric-value muted">{arrendondador(venda_media_segmento)}')
     html = html.replace('class="metric-value">venda_media_piso', f'class="metric-value muted">{arrendondador(venda_media_piso)}')
-    html = html.replace('class="metric-value">conversao_valor', f'class="metric-value muted">{arrendondador((venda/fluxo_pessoas)*100) if fluxo_pessoas > 0 else 0}%')
+    html = html.replace('class="metric-value">aluguel_m2_valor', f'class="metric-value muted">{aluguel_m2}')
     html = html.replace('class="metric-value muted">tempo_op_valor', f'class="metric-value muted">{tempo_operacao} meses aprox.')
 
 
@@ -220,4 +219,4 @@ else:
     loja_sem_agrupamento = loja_sem_agrupamento[['Data', 'Nome Fantasia', 'M2', 'Venda', 'VendaAA', '% Venda AA', 'Venda/M²', 
                                                 'Aluguel', 'CTO Comum', 'CTO Comum/Venda', 'CTOcomum/M²', 'CTO Total', 'Desconto', 'Inadimplência']]
 
-    loja_sem_agrupamento
+    st.dataframe(loja_sem_agrupamento, hide_index=True, use_container_width=True)

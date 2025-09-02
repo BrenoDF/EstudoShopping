@@ -76,4 +76,4 @@ DFLojasAtual = DFLojas.loc[filtroSideBar & filtroDataSelecionada]
 st.title("Marketing")
 
 df_essencial = DFLojasAtual[['Data', 'Luc', 'Nome Fantasia','M2', 'Venda', 'Aluguel', 'CTO Comum']]
-DFLojasAtual
+# DFLojasAtual

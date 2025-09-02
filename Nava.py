@@ -30,9 +30,9 @@ hoje = date.today()
 hoje = hoje.replace(day=1)
 
 sliderIntervalo = st.sidebar.date_input("Período",
-                     value = (date(2025,1,1),DFLojas['Data'].max()),
+                     value = (date(2025,1,1),DF_Fluxo[DF_Fluxo['Fluxo de Carros']>0].index.max()),
                      min_value=date(2018,1,1),
-                     max_value=DFLojas['Data'].max(),
+                     max_value=DF_Fluxo[DF_Fluxo['Fluxo de Carros']>0].index.max(),
                      format= "DD/MM/YYYY"
 )
 inicio, fim = sliderIntervalo
@@ -469,24 +469,74 @@ with tabDF:
 
 with tabCTO:
   st.subheader("Análise de CTO")
-  tabela_cto = DFLojasAtual.groupby(['Classificação', 'Segmento', 'Atividade']).agg({
+  tabela_cto = DFLojasAtual.groupby(['Classificação', 'Segmento', 'Atividade'], dropna=False).agg({
       'Venda': 'sum',
       'Aluguel': 'sum',
       'CTO Comum': 'sum',
       'CTO Total': 'sum',
       'Desconto': 'sum',
-      'Inadimplência': 'sum',
-      'M2': 'sum'
+      'Inadimplência': 'sum'
       }).reset_index()
-  tabela_cto
-  st.markdown('''Lembrar de separar por Classificação, talvez colocar um filtro entre cada tipo?
-              Fazer um boxplot de CTO/Venda entre as classificações e etc.
-              Ver quais tipos de operações tem mais desconto e inadimplência graficamente.
-              Ver qual tem mais m2 no empreendimento.
-              ''')
+  # st.markdown('''Lembrar de separar por Classificação, talvez colocar um filtro entre cada tipo?
+  #             Fazer um boxplot de CTO/Venda entre as classificações e etc.
+  #             Ver quais tipos de operações tem mais desconto e inadimplência graficamente.
+  #             ''')
+  tabela_cto = tabela_cto[['Classificação', 'Segmento', 'Atividade', 'Venda', 'Aluguel', 'CTO Comum', 'CTO Total', 'Desconto', 'Inadimplência']]
+
+  agrupamento_cto = st.segmented_control(
+                    'Agrupar por:',
+                    options = ['Classificação', 'Segmento', 'Atividade'],
+                    key = 'agrupamento_cto',
+                    selection_mode= 'single',
+                    default = None)
+  if agrupamento_cto:
+      tabela_cto = tabela_cto.groupby(agrupamento_cto).agg({
+          'Venda': 'sum',
+          'Aluguel': 'sum',
+          'CTO Comum': 'sum',
+          'CTO Total': 'sum',
+          'Desconto': 'sum',
+          'Inadimplência': 'sum'
+      }).reset_index()
+      tabela_cto['CTO Comum/Venda'] = round((tabela_cto['CTO Comum'] / tabela_cto['Venda']) * 100, 2)
+      st.dataframe(tabela_cto, use_container_width=True, hide_index=True)
+      
+      coluna_grafico_cto1, coluna_grafico_cto2 = st.columns(2)
+      with coluna_grafico_cto1:
+        verbas_cto_box = st.pills(
+            'Selecione a verba para o boxplot:',
+            options=['Venda', 'CTO Comum', 'Aluguel', 'CTO Total', 'CTO Comum/Venda'],
+            selection_mode= 'single',
+            default='Venda'
+        )
+        fig1 = px.box(DFLojasAtual[DFLojasAtual['Venda']>0], x=agrupamento_cto, y=verbas_cto_box, title=f'Boxplot de {verbas_cto_box} por {agrupamento_cto}', hover_data=['Luc','Nome Fantasia'])
+        fig1.update_yaxes(type="log")
+        st.plotly_chart(fig1, use_container_width=True)
+      with coluna_grafico_cto2:
+        verbas_cto_scatter = st.pills(
+            'Selecione a verba para o scatterplot:',
+            options=['CTO Comum', 'Aluguel', 'CTO Total', 'CTO Comum/Venda'],
+            selection_mode= 'single',
+            default='CTO Comum/Venda'
+        )
+        fig2 = px.scatter(DFLojasAtual[DFLojasAtual['Venda']>0], x='Venda', y=verbas_cto_scatter, color=agrupamento_cto, title=f'Scatterplot de {verbas_cto_scatter} vs Venda')
+        fig2.update_yaxes(type="log")
+        fig2.update_xaxes(type="log")
+        st.plotly_chart(fig2, use_container_width=True)
+        df_cto_lojas = DFLojasAtual.groupby(['Luc', 'Nome Fantasia', 'Classificação', 'Segmento', 'Atividade'])[['Venda', 'CTO Comum', 'Aluguel', 'CTO Total', 'Desconto', 'Inadimplência']].sum().reset_index()
+        df_cto_lojas['CTO Comum/Venda'] = round((df_cto_lojas['CTO Comum'] / df_cto_lojas['Venda']) * 100, 2)
+      st.dataframe(df_cto_lojas, hide_index=True, use_container_width=True)
+      
+  else:
+      tabela_cto['CTO Comum/Venda'] = round((tabela_cto['CTO Comum'] / tabela_cto['Venda']) * 100, 2)
+    
+      st.dataframe(tabela_cto, use_container_width=True, hide_index=True)
+      st.info('Selecione um agrupamento para ver os gráficos!', icon="ℹ️")
+
   
-
-
+  
+  
+  
 ## vvv CSS vvv ##
 st.markdown("""
 
