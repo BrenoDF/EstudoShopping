@@ -158,6 +158,11 @@
             color: #64748b;
             font-size: 14px;
         }
+        .right{
+            display: grid;
+            gap: 12px;
+
+        }
     </style>
 </head>
 
@@ -266,9 +271,17 @@
             </div>
 
             <!-- Área do gráfico de volta -->
-            <div class="chart-area" id="chart-area">
-                <div class="hint">
-                    <!-- GRAFICO_AQUI -->
+            <div class="right">
+                <div class="chart-area" id="chart-area">
+                    <div class="hint">
+                        <!-- GRAFICO_AQUI -->
+                    </div>
+                </div>
+
+            <!-- Novo bloco embaixo do gráfico -->
+                <div class="card">
+                    <div class="metric-title">Tempo de Operação</div>
+                    <div class="metric-value muted">tempo_op_valor</div>
                 </div>
             </div>
         </section>

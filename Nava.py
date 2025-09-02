@@ -144,7 +144,7 @@ for trace in figVendatotal.data:
             f"{trace.name}: R$ "+"%{y:,.2f}<extra></extra>"
         )
 
-tabMain, tabDF =  st.tabs(["Resumos", "Tabelas"]) ## Criação das abas
+tabMain, tabDF, tabCTO =  st.tabs(["Resumos", "Tabelas", 'CTO']) ## Criação das abas
 
 
 
@@ -385,74 +385,74 @@ with tabMain:
       
 # ----------------------- ENTRADA E SAÍDA DE LOJAS ----------------------- #
 
-st.divider()
-st.subheader('Lojas que entraram e saíram')
-UltimaData = DFLojas['Data'].max()
-EntradaSaida = DFLojasAtual[['Nome Fantasia', 'Data que entrou', 'Data que saiu']]
-df_entradas = EntradaSaida[["Data que entrou", "Nome Fantasia"]].rename(columns={"Data que entrou": "Data", "Nome Fantasia": "Entrou"})
-df_saidas = EntradaSaida[["Data que saiu", "Nome Fantasia"]].rename(columns={"Data que saiu": "Data", "Nome Fantasia": "Saiu"})
-df_saidas.loc[df_saidas['Data'] == UltimaData, 'Data'] = pd.NaT
-EntradaSaida = pd.concat([df_entradas, df_saidas])
-EntradaSaida = EntradaSaida.groupby("Data").agg(lambda x: ', '.join(x.dropna().unique())).reset_index().sort_values(by = ['Data'], ascending=False)
-mascaraDeContagemVirgulaEntrou = EntradaSaida['Entrou'].fillna('').str.count(',')
-mascaraDeContagemVirgulaSaiu = EntradaSaida['Saiu'].fillna('').str.count(',')
-EntradaSaida['Entrou (Contagem)'] = (
-(mascaraDeContagemVirgulaEntrou + 1).where(EntradaSaida['Entrou'] != '', 0)
-.astype(int)
-)
-EntradaSaida['Saiu (Contagem)'] = (
-(mascaraDeContagemVirgulaSaiu + 1).where(EntradaSaida['Saiu'] != '', 0)
-.astype(int)
-)
-EntradaSaida = EntradaSaida[(EntradaSaida['Data'] >= inicio)&(EntradaSaida['Data'] <= fim)]
-EntradaSaida['Data'] = EntradaSaida['Data'].dt.strftime('%d/%m/%Y')
-EntradaSaida = EntradaSaida[['Data', 'Entrou (Contagem)', 'Saiu (Contagem)', 'Entrou', 'Saiu']]
+  st.divider()
+  st.subheader('Lojas que entraram e saíram')
+  UltimaData = DFLojas['Data'].max()
+  EntradaSaida = DFLojasAtual[['Nome Fantasia', 'Data que entrou', 'Data que saiu']]
+  df_entradas = EntradaSaida[["Data que entrou", "Nome Fantasia"]].rename(columns={"Data que entrou": "Data", "Nome Fantasia": "Entrou"})
+  df_saidas = EntradaSaida[["Data que saiu", "Nome Fantasia"]].rename(columns={"Data que saiu": "Data", "Nome Fantasia": "Saiu"})
+  df_saidas.loc[df_saidas['Data'] == UltimaData, 'Data'] = pd.NaT
+  EntradaSaida = pd.concat([df_entradas, df_saidas])
+  EntradaSaida = EntradaSaida.groupby("Data").agg(lambda x: ', '.join(x.dropna().unique())).reset_index().sort_values(by = ['Data'], ascending=False)
+  mascaraDeContagemVirgulaEntrou = EntradaSaida['Entrou'].fillna('').str.count(',')
+  mascaraDeContagemVirgulaSaiu = EntradaSaida['Saiu'].fillna('').str.count(',')
+  EntradaSaida['Entrou (Contagem)'] = (
+  (mascaraDeContagemVirgulaEntrou + 1).where(EntradaSaida['Entrou'] != '', 0)
+  .astype(int)
+  )
+  EntradaSaida['Saiu (Contagem)'] = (
+  (mascaraDeContagemVirgulaSaiu + 1).where(EntradaSaida['Saiu'] != '', 0)
+  .astype(int)
+  )
+  EntradaSaida = EntradaSaida[(EntradaSaida['Data'] >= inicio)&(EntradaSaida['Data'] <= fim)]
+  EntradaSaida['Data'] = EntradaSaida['Data'].dt.strftime('%d/%m/%Y')
+  EntradaSaida = EntradaSaida[['Data', 'Entrou (Contagem)', 'Saiu (Contagem)', 'Entrou', 'Saiu']]
 
-st.dataframe(EntradaSaida, hide_index=True, use_container_width=True)
-
-
+  st.dataframe(EntradaSaida, hide_index=True, use_container_width=True)
 
 
 
 
 
-# ----------------------- LOJAS CRÍTICAS ----------------------- #
-st.divider()
 
-st.subheader('Lojas em Criticidade ⚠️')
-st.markdown('Lojas com **Desconto** ou **Inadimplência**, que tiveram :orange[Vendas menores que o Ano Anterior] e :red[CTO Comum/Venda maior que o recomendado para sua Classificação].')
-regras = {
-      'Âncoras': 5, 
-      'Conveniência / Serviços': 15, 
-      'Satélites': 15, 
-      'Semi Âncoras': 5,
-      'Mega Lojas': 10,  
-      'Entretenimento': 15, 
-      'Quiosque':15
-}
 
-CriticoAcumulado = DFLojasAtual[(DFLojasAtual['Desconto']>0) | (DFLojasAtual['Inadimplência']>0)]
-CriticoAcumulado = CriticoAcumulado.groupby(['ID'], as_index=False).agg({
-    'M2': 'last',
-    'VendaAA': 'sum',
-    'Venda': 'sum',
-    'CTO Comum': 'sum',
-    'Aluguel Mínimo': 'sum',
-    'Aluguel Complementar': 'sum',
-    'Encargo Comum': 'sum',
-    'Classificação': 'last',
-    'Piso': 'last',
-    'Lado': 'last',
-    'Desconto': 'sum',
-    'Inadimplência': 'sum'
-    
-})
-CriticoAcumulado['CTO Comum/Venda'] = round((CriticoAcumulado['CTO Comum'] / CriticoAcumulado['Venda']) * 100, 2)
+  # ----------------------- LOJAS CRÍTICAS ----------------------- #
+  st.divider()
 
-VendaMenorQueAA = CriticoAcumulado[CriticoAcumulado['Venda'] < CriticoAcumulado['VendaAA']]
+  st.subheader('Lojas em Criticidade ⚠️')
+  st.markdown('Lojas com **Desconto** ou **Inadimplência**, que tiveram :orange[Vendas menores que o Ano Anterior] e :red[CTO Comum/Venda maior que o recomendado para sua Classificação].')
+  regras = {
+        'Âncoras': 5, 
+        'Conveniência / Serviços': 15, 
+        'Satélites': 15, 
+        'Semi Âncoras': 5,
+        'Mega Lojas': 10,  
+        'Entretenimento': 15, 
+        'Quiosque':15
+  }
 
-criticoCTOAlto = VendaMenorQueAA[(VendaMenorQueAA['CTO Comum/Venda'] > VendaMenorQueAA['Classificação'].map(regras))]
-st.dataframe(criticoCTOAlto.reset_index(drop=True), use_container_width=True, hide_index=True)
+  CriticoAcumulado = DFLojasAtual[(DFLojasAtual['Desconto']>0) | (DFLojasAtual['Inadimplência']>0)]
+  CriticoAcumulado = CriticoAcumulado.groupby(['ID'], as_index=False).agg({
+      'M2': 'last',
+      'VendaAA': 'sum',
+      'Venda': 'sum',
+      'CTO Comum': 'sum',
+      'Aluguel Mínimo': 'sum',
+      'Aluguel Complementar': 'sum',
+      'Encargo Comum': 'sum',
+      'Classificação': 'last',
+      'Piso': 'last',
+      'Lado': 'last',
+      'Desconto': 'sum',
+      'Inadimplência': 'sum'
+      
+  })
+  CriticoAcumulado['CTO Comum/Venda'] = round((CriticoAcumulado['CTO Comum'] / CriticoAcumulado['Venda']) * 100, 2)
+
+  VendaMenorQueAA = CriticoAcumulado[CriticoAcumulado['Venda'] < CriticoAcumulado['VendaAA']]
+
+  criticoCTOAlto = VendaMenorQueAA[(VendaMenorQueAA['CTO Comum/Venda'] > VendaMenorQueAA['Classificação'].map(regras))]
+  st.dataframe(criticoCTOAlto.reset_index(drop=True), use_container_width=True, hide_index=True)
 
 with tabDF:
 
@@ -467,7 +467,24 @@ with tabDF:
   st.dataframe(DF_FluxoFiltrado, use_container_width=True, hide_index=True)
 
 
-
+with tabCTO:
+  st.subheader("Análise de CTO")
+  tabela_cto = DFLojasAtual.groupby(['Classificação', 'Segmento', 'Atividade']).agg({
+      'Venda': 'sum',
+      'Aluguel': 'sum',
+      'CTO Comum': 'sum',
+      'CTO Total': 'sum',
+      'Desconto': 'sum',
+      'Inadimplência': 'sum',
+      'M2': 'sum'
+      }).reset_index()
+  tabela_cto
+  st.markdown('''Lembrar de separar por Classificação, talvez colocar um filtro entre cada tipo?
+              Fazer um boxplot de CTO/Venda entre as classificações e etc.
+              Ver quais tipos de operações tem mais desconto e inadimplência graficamente.
+              Ver qual tem mais m2 no empreendimento.
+              ''')
+  
 
 
 ## vvv CSS vvv ##

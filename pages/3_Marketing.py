@@ -73,4 +73,7 @@ DFLojasAtual = DFLojas.loc[filtroSideBar & filtroDataSelecionada]
 
 # ------------------    INICIO DA PÁGINA    ------------------ #
 
-st.title("Análise de CTO")
+st.title("Marketing")
+
+df_essencial = DFLojasAtual[['Data', 'Luc', 'Nome Fantasia','M2', 'Venda', 'Aluguel', 'CTO Comum']]
+DFLojasAtual
