@@ -32,7 +32,7 @@ hoje = hoje.replace(day=1)
 sliderIntervalo = st.sidebar.date_input("Período",
                      value = (date(2025,1,1),DF_Fluxo[DF_Fluxo['Fluxo de Carros']>0].index.max()),
                      min_value=date(2018,1,1),
-                     max_value=DF_Fluxo[DF_Fluxo['Fluxo de Carros']>0].index.max(),
+                     max_value=DFLojas['Data'].max().replace(day=31),
                      format= "DD/MM/YYYY"
 )
 inicio, fim = sliderIntervalo
@@ -50,8 +50,11 @@ with st.sidebar.expander("Filtros Avançados", expanded=False):
             'Selecione as classificações que deseja visualizar',
         options=classificacao_unica,
         selection_mode= 'multi',
-        default= default
+        default= default,
+        key = 'classificacao_pills'
     )
+    
+    
 
     LadoSelecionado = st.segmented_control(
         'Lado:',
@@ -75,11 +78,11 @@ st.title("Relatório de Performance")
 
 # Aplicando os Filtros do SideBar
 filtroSideBar = ((DFLojas['Classificação'].isin(ClassificacaoSelecionada)) &
-    (DFLojas['Piso'].isin(PisosSelecionados)) &
-    ((LadoSelecionado == 'Ambos')
-      |
-      (DFLojas['Lado']==LadoSelecionado)
-      ))
+                  (DFLojas['Piso'].isin(PisosSelecionados)) &
+                  ((LadoSelecionado == 'Ambos')
+                    |
+                    (DFLojas['Lado']==LadoSelecionado)
+                  ))
 
 #Buscando o periodo de Ano Anterior
 inicio_aa = inicio - relativedelta(years=1)
@@ -94,6 +97,8 @@ DFLojasAA = DFLojas.loc[filtroSideBar & filtroDataSelecionada_AA]
 ## SSS ##
 if sss:
   # depois de gerar DFLojasAtual e DFLojasAA -----------------------------
+  DFLojasAtual = DFLojasAtual[DFLojasAtual['Venda'] > 0]
+  DFLojasAA    = DFLojasAA[DFLojasAA['Venda'] > 0]
 
   for df in (DFLojasAtual, DFLojasAA):
       df['month'] = df['Data'].dt.month        # 1) mês numérico
@@ -108,6 +113,7 @@ if sss:
   # 3) aplica interseção – agora cada loja só tem meses em que existia nos DOIS anos
   DFLojasAtual = DFLojasAtual.merge(pares_comuns, on=['ID', 'month'], how='inner')
   DFLojasAA    = DFLojasAA.merge(pares_comuns, on=['ID', 'month'], how='inner')
+  
 ## FIM DO SSS ##
 
 #Trazendo Mês-a-Mês
@@ -360,10 +366,18 @@ with tabMain:
 
     
   with coly:
-      st.metric('Fluxo de Pessoas', ProcTab.formata_numero(DF_FluxoFiltrado['Fluxo de Pessoas'].sum().astype(int)), 
-                delta = f'{round((DF_FluxoFiltrado['Fluxo de Pessoas'].sum()/DF_FluxoFiltradoAA['Fluxo de Pessoas'].sum()-1)*100,2)}% / AA',
-                width="stretch",
-                border= True)
+      atual = DF_FluxoFiltrado['Fluxo de Pessoas'].sum()
+      anterior = DF_FluxoFiltradoAA['Fluxo de Pessoas'].sum()
+
+      delta_pct = ((atual - anterior) / anterior) * 100
+
+      st.metric(
+            "Fluxo de Pessoas",
+            ProcTab.formata_numero(int(atual)),
+            delta=f"{delta_pct:.2f}% / AA",
+            border=True
+            )
+
       st.metric('Média por mês', ProcTab.formata_numero(DF_FluxoFiltrado.groupby('Mês')['Fluxo de Pessoas'].sum().mean().astype(int)),
                 width="stretch",
                 border= True)
@@ -455,13 +469,41 @@ with tabMain:
   st.dataframe(criticoCTOAlto.reset_index(drop=True), use_container_width=True, hide_index=True)
 
 with tabDF:
-
+  
+  st.toggle("Exibir acumulado", value=False, key='toggle_tabelas_acumulado')
   st.subheader("Tabela de Lojas")
-  st.dataframe(DFLojasAtual, use_container_width=True, hide_index=True, column_config={
-    'Data': st.column_config.DateColumn(
-        format="DD/MM/YYYY"
-    )
-  } )
+  if st.session_state.toggle_tabelas_acumulado:
+    DFLojasAtualAcumulado = DFLojasAtual.groupby(['Luc', 'Nome Fantasia'], as_index=False).agg({
+        'M2': 'last',
+        'VendaAA': 'sum',
+        'Venda': 'sum',
+        'CTO Comum': 'sum',
+        'CTO Total': 'sum',
+        'Aluguel': 'sum',
+        'Desconto': 'sum',
+        'Inadimplência': 'sum',
+        'Classificação': 'last',
+        'Segmento': 'last',
+        'Atividade': 'last',
+        'Piso': 'last',
+        'Lado': 'last'
+    })
+    DFLojasAtualAcumulado['CTO Comum/Venda'] = round((DFLojasAtual['CTO Comum'] / DFLojasAtual['Venda']) * 100, 2)
+    DFLojasAtualAcumulado['Var.Venda'] = round(((DFLojasAtualAcumulado['Venda'] / DFLojasAtualAcumulado['VendaAA'])-1)*100,2)
+    DFLojasAtualAcumulado['Aluguel/m²'] = round((DFLojasAtualAcumulado['Aluguel'] / DFLojasAtualAcumulado['M2']),2)
+    DFLojasAtualAcumulado['Venda/m²'] = round((DFLojasAtualAcumulado['Venda'] / DFLojasAtualAcumulado['M2']),2)
+    DFLojasAtualAcumulado = DFLojasAtualAcumulado[['Luc', 'Nome Fantasia', 'M2', 'VendaAA', 'Venda', 'Var.Venda', 'CTO Comum', 'CTO Comum/Venda', 'CTO Total', 'Aluguel', 'Desconto', 'Inadimplência', 'Classificação', 'Segmento', 'Atividade', 'Piso', 'Lado']]
+    st.dataframe(DFLojasAtualAcumulado, use_container_width=True, hide_index=True, column_config={
+      'Data': st.column_config.DateColumn(
+          format="DD/MM/YYYY"
+      )
+    } )
+  else:
+    st.dataframe(DFLojasAtual, use_container_width=True, hide_index=True, column_config={
+      'Data': st.column_config.DateColumn(
+          format="DD/MM/YYYY"
+      )
+    } )
   st.divider()
   st.subheader("Tabela de Fluxo")
   st.dataframe(DF_FluxoFiltrado, use_container_width=True, hide_index=True)

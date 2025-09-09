@@ -117,7 +117,9 @@ else:
     lado_selecionado = df_apenaslojas_filtrado_final[df_apenaslojas_filtrado_final['ID']==loja_selecionada]['Lado'].iloc[0]
     venda_media_piso = df_apenaslojas_filtrado_final[(df_apenaslojas_filtrado_final['Piso']==piso_selecionado)]['Venda'].mean()
     venda_media_segmento = df_apenaslojas_filtrado_final[(df_apenaslojas_filtrado_final['Segmento']==segmento_selecionado)]['Venda'].mean()
+    soma_m2 = loja['M2'].sum()
     venda_media = loja['Venda'].mean()
+    cto_comum_medio = loja['CTO Comum'].mean()
     regras = {
         'Âncoras': 5, 
         'Conveniência / Serviços': 15, 
@@ -155,7 +157,8 @@ else:
     venda = arrendondador(loja['Venda'].item())
     venda_aa = arrendondador(loja['VendaAA'].item())
     aluguel = arrendondador(loja['Aluguel'].item())
-    aluguel_m2 = arrendondador(loja['Aluguel'].item()/m2)
+    aluguel_m2 = arrendondador(loja['Aluguel'].item()/soma_m2)
+
 
     if venda_aa == 0:
         variacao_venda = None  # ou 0, ou float('nan'), depende da sua regra de negócio
@@ -163,7 +166,7 @@ else:
         variacao_venda = arrendondador(((venda / venda_aa) -1) * 100)
 
     nome = loja['Nome Fantasia'].item()
-    venda_p_m2 = arrendondador(venda/m2)
+    venda_p_m2 = arrendondador(venda/soma_m2)
     if loja['CTO Comum'].item() == 0 or loja['Venda'].item() == 0:
         venda_por_cto_comum = 0
     else:
@@ -187,25 +190,27 @@ else:
 
 
     html = html.replace('class="title">Nome_Loja', f'class="title">{nome}')
-    html = html.replace('class="value">venda_valor', f'class="value">{venda}')
-    html = html.replace('class="value">vendaaa_valor', f'class="value">{venda_aa}')
-    html = html.replace('class="value ok">var_venda_aa_valor', f'class="value {cls(variacao_venda)}">{variacao_venda}{"%" if variacao_venda is not None else ""}')
+    html = html.replace('class="metric-value">venda_valor', f'class="metric-value">{venda}')
+    html = html.replace('class="metric-value">vendaaa_valor', f'class="metric-value">{venda_aa}')
+    html = html.replace('class="metric-value ok">var_venda_valor', f'class="metric-value {cls(variacao_venda)}">{variacao_venda}{"%" if variacao_venda is not None else ""}')
     html = html.replace('class="value">m2_valor', f'class="value muted">{m2}')
-    html = html.replace('class="value">venda_ideal_valor', f'class="value">{arrendondador(loja["Venda Ideal"].item())}')
-    html = html.replace('class="value">venda_media_valor', f'class="value">{arrendondador(venda_media)}')
-    html = html.replace('class="metric-value">aluguel_valor', f'class="metric-value muted">{aluguel}')
-    html = html.replace('class="metric-value">venda_por_m2_valor', f'class="metric-value muted">{venda_p_m2}')
+    html = html.replace('class="metric-value">venda_media_valor', f'class="metric-value">{arrendondador(venda_media)}')
+    html = html.replace('class="value">aluguel_valor', f'class="value muted">{aluguel}')
+    html = html.replace('class="metric-value">venda_por_m2_valor', f'class="metric-value">{venda_p_m2}')
     html = html.replace('class="metric-value ok">venda_por_cto_comum_valor', f'class="metric-value {"ok" if venda_por_cto_comum<=regra_map else "warn"}">{venda_por_cto_comum}%')
-    html = html.replace('class="metric-value warn">inadimplencia_mes_valor', f'class="metric-value {'muted' if loja["Inadimplência"].item() == 0 else 'warn'}">{arrendondador(loja["Inadimplência"].item())}')
-    html = html.replace('class="metric-value warn">desconto_valor', f'class="metric-value {'muted' if loja["Desconto"].item() == 0 else 'warn'}">{arrendondador(loja["Desconto"].item())}')
+    html = html.replace('class="value warn">inadimplencia_mes_valor', f'class="value {'muted' if loja["Inadimplência"].item() == 0 else 'warn'}">{arrendondador(loja["Inadimplência"].item())}')
+    html = html.replace('class="value warn">desconto_valor', f'class="value {'muted' if loja["Desconto"].item() == 0 else 'warn'}">{arrendondador(loja["Desconto"].item())}')
     html = html.replace('class="metric-value">cto_comum_valor', f'class="metric-value muted">{arrendondador(loja["CTO Comum"].item())}')
     html = html.replace('class="metric-value">cto_total_valor', f'class="metric-value muted">{arrendondador(loja["CTO Total"].item())}')
     html = html.replace('class="metric-value">cto_comum_por_m2', f'class="metric-value muted">{arrendondador(loja["CTO Comum"].item()/m2)}')
-    html = html.replace('class="metric-value muted">segmento_e_piso', f'class="metric-value muted">{segmento_selecionado} / {piso_selecionado} - {lado_selecionado}')
+    html = html.replace('class="metric-value muted">segmento_e_piso_valor', f'class="metric-value muted">{segmento_selecionado} / {piso_selecionado} - {lado_selecionado}')
     html = html.replace('class="metric-value">venda_media_segmento', f'class="metric-value muted">{arrendondador(venda_media_segmento)}')
     html = html.replace('class="metric-value">venda_media_piso', f'class="metric-value muted">{arrendondador(venda_media_piso)}')
-    html = html.replace('class="metric-value">aluguel_m2_valor', f'class="metric-value muted">{aluguel_m2}')
-    html = html.replace('class="metric-value muted">tempo_op_valor', f'class="metric-value muted">{tempo_operacao} meses aprox.')
+    html = html.replace('class="value">aluguel_m2_valor', f'class="value muted">{aluguel_m2}')
+    html = html.replace('class="value">tempo_op_valor', f'class="value muted">{tempo_operacao} meses')
+    html = html.replace('class="metric-value">cto_comum_medio', f'class="metric-value muted">{arrendondador(cto_comum_medio)}')
+    html = html.replace('class="period-card">periodo_valor', f'class="period-card"> Periodo: {inicio.strftime("%d/%m/%Y")} - {fim.strftime("%d/%m/%Y")}')
+    html = html.replace('class="period-card">empreendimento', f'class="period-card">{loja["Empreendimento"].item()}')
 
 
     html = html.replace("<!-- GRAFICO_AQUI -->", f'{fig.to_html(full_html=False, include_plotlyjs="cdn")}')
@@ -216,7 +221,8 @@ else:
     # ---------------------------    Tabela     -------------------------------- #
 
     loja_sem_agrupamento = df_apenaslojas_filtrado_final[df_apenaslojas_filtrado_final['ID']==loja_selecionada]
+    loja_sem_agrupamento['Aluguel/M²'] = round(loja_sem_agrupamento['Aluguel']/loja_sem_agrupamento['M2'],2)
     loja_sem_agrupamento = loja_sem_agrupamento[['Data', 'Nome Fantasia', 'M2', 'Venda', 'VendaAA', '% Venda AA', 'Venda/M²', 
-                                                'Aluguel', 'CTO Comum', 'CTO Comum/Venda', 'CTOcomum/M²', 'CTO Total', 'Desconto', 'Inadimplência']]
+                                                'Aluguel', 'Aluguel/M²','CTO Comum', 'CTO Comum/Venda', 'CTOcomum/M²', 'CTO Total', 'Desconto', 'Inadimplência']]
 
     st.dataframe(loja_sem_agrupamento, hide_index=True, use_container_width=True)

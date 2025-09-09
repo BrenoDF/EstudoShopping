@@ -164,38 +164,58 @@
             gap: 12px;
 
         }
+
+        .header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            /* quebra em telas menores */
+        }
+
+        .period-card {
+            background: rgba(109, 174, 204, 0.08);
+            border-radius: rgba(0, 64, 94, 0.35);
+            box-shadow: var(--shadow);
+            padding: 12px 14px;
+        }
     </style>
 </head>
 
 <body>
     <div class="wrap">
-        <h1 class="title">Nome_Loja</h1>
+        <div class="header">
+            <h1 class="title">Nome_Loja</h1>
+            <span class="period-card">periodo_valor</span>
+            <span class="period-card">empreendimento</span>
+        </div>
 
         <!-- KPIs do topo -->
         <section class="kpis">
-            <div class="card kpi">
-                <div class="label">Vendas</div>
-                <div class="value">venda_valor</div>
-            </div>
-            <div class="card kpi">
-                <div class="label">Vendas AA</div>
-                <div class="value">vendaaa_valor</div>
-            </div>
-            <div class="card kpi">
-                <div class="label">Var. Vendas AA</div>
-                <div class="value ok">var_venda_aa_valor</div>
-            </div>
             <div class="card kpi">
                 <div class="label">m²</div>
                 <div class="value">m2_valor</div>
             </div>
             <div class="card kpi">
-                <div class="label">Venda Ideal</div>
-                <div class="value">venda_ideal_valor</div>
+                <div class="label">Aluguel</div>
+                <div class="value">aluguel_valor</div>
             </div>
             <div class="card kpi">
-                <div class="label">Venda Média no Período</div>
-                <div class="value">venda_media_valor</div>
+                <div class="label">Aluguel/M²</div>
+                <div class="value">aluguel_m2_valor</div>
+            </div>
+            <div class="card kpi">
+                <div class="label">Desconto</div>
+                <div class="value warn">desconto_valor</div>
+            </div>
+            <div class="card kpi">
+                <div class="label">Inadimplência</div>
+                <div class="value warn">inadimplencia_mes_valor</div>
+            </div>
+            <div class="card kpi">
+                <div class="label">Tempo de Operação</div>
+                <div class="value">tempo_op_valor</div>
             </div>
         </section>
 
@@ -205,35 +225,45 @@
                 <div class="stack">
                     <div class="pair">
                         <div class="card">
-                            <div class="metric-title">Venda / M²</div>
-                            <div class="metric-value">venda_por_m2_valor</div>
+                            <div class="metric-title">Venda</div>
+                            <div class="metric-value">venda_valor</div>
                         </div>
                         <div class="card">
-                            <div class="metric-title">Aluguel</div>
-                            <div class="metric-value">aluguel_valor</div>
+                            <div class="metric-title">Venda A.A</div>
+                            <div class="metric-value">vendaaa_valor</div>
                         </div>
                     </div>
 
                     <div class="pair">
                         <div class="card">
-                            <div class="metric-title">Desconto</div>
-                            <div class="metric-value warn">desconto_valor</div>
+                            <div class="metric-title">Venda/M²</div>
+                            <div class="metric-value">venda_por_m2_valor</div>
                         </div>
                         <div class="card">
-                            <div class="metric-title">Inadimplência Total</div>
-                            <div class="metric-value warn">inadimplencia_mes_valor</div>
+                            <div class="metric-title">Variação de Venda</div>
+                            <div class="metric-value ok">var_venda_valor</div>
                         </div>
                     </div>
 
                     <div class="card">
-                        <div class="metric-title">CTO Comum</div>
-                        <div class="metric-value">cto_comum_valor</div>
+                        <div class="metric-title">Venda Média no Periodo</div>
+                        <div class="metric-value">venda_media_valor</div>
+                    </div>
+                    <div class="pair">
+                        <div class="card">
+                            <div class="metric-title">Venda Média do Segmento</div>
+                            <div class="metric-value">venda_media_segmento</div>
+                        </div>
+                        <div class="card">
+                            <div class="metric-title">Venda Média do Piso</div>
+                            <div class="metric-value">venda_media_piso</div>
+                        </div>
                     </div>
 
                     <div class="pair">
                         <div class="card">
-                            <div class="metric-title">Venda por CTO Comum</div>
-                            <div class="metric-value ok">venda_por_cto_comum_valor</div>
+                            <div class="metric-title">CTO Comum</div>
+                            <div class="metric-value">cto_comum_valor</div>
                         </div>
                         <div class="card">
                             <div class="metric-title">CTO Comum / M²</div>
@@ -247,26 +277,16 @@
                             <div class="metric-value">cto_total_valor</div>
                         </div>
                         <div class="card">
-                            <div class="metric-title">Aluguel por M²</div>
-                            <div class="metric-value">aluguel_m2_valor</div>
+                            <div class="metric-title">CTO Comum Médio Periodo</div>
+                            <div class="metric-value">cto_comum_medio</div>
                         </div>
                     </div>
 
                     <div class="card">
-                        <div class="metric-title">Segmento e Piso</div>
-                        <div class="metric-value muted">segmento_e_piso</div>
+                        <div class="metric-title">CTO Comum sobre a Venda</div>
+                        <div class="metric-value ok">venda_por_cto_comum_valor</div>
                     </div>
 
-                    <div class="pair">
-                        <div class="card">
-                            <div class="metric-title">Venda Média do Segmento</div>
-                            <div class="metric-value">venda_media_segmento</div>
-                        </div>
-                        <div class="card">
-                            <div class="metric-title">Venda Média do Piso</div>
-                            <div class="metric-value">venda_media_piso</div>
-                        </div>
-                    </div>
 
                 </div>
             </div>
@@ -281,8 +301,8 @@
 
                 <!-- Novo bloco embaixo do gráfico -->
                 <div class="card">
-                    <div class="metric-title">Tempo de Operação</div>
-                    <div class="metric-value muted">tempo_op_valor</div>
+                    <div class="metric-title">Segmento e Piso</div>
+                    <div class="metric-value muted">segmento_e_piso_valor</div>
                 </div>
             </div>
         </section>

@@ -8,7 +8,6 @@ path1 = 'Banco de dados.xlsx'
 pathFluxoVS = 'Controle Tesouraria Viashopping.xlsx'
 pathFluxoVB = 'Controle Tesouraria Viabrasil.xlsx'
 
-
 @st.cache_data
 def TabelaOriginal(emp):
     
@@ -68,17 +67,16 @@ def TabelaOriginal(emp):
     CompClassPos['% Venda AA'] =  [(((v / vAA)-1)*100) if v != 0 and pd.notna(vAA) and vAA != 0 else np.nan for v, vAA in zip(CompClassPos['Venda'], CompClassPos['VendaAA'])]
     CompClassPos['% Venda AA'] = [str(round(x, 2)) + '%' if pd.notna(x) else x for x in CompClassPos['% Venda AA']]
     CompClassPos = CompClassPos[~CompClassPos['Luc'].str.contains(r'[DMX]', na = False, case = False)]
-    CompClassPos['Aluguel'] = [
-        (x + y) if (id_val != '1016_1001 FESTAS' and id_val != '1009_ATACAREJÃO DO LAR') else (x + y + z)
-        for x, y, z, id_val in zip(
-            CompClassPos['Aluguel Mínimo'],
-            CompClassPos['Aluguel Percentual'],
-            CompClassPos['Aluguel Complementar'],
-            CompClassPos['ID']
-        )
-    ]
+    CompClassPos['Aluguel'] = (
+
+        CompClassPos['Aluguel Mínimo'] +
+        CompClassPos['Aluguel Percentual'] +
+        CompClassPos['Aluguel Complementar'] 
+        
+    )
     CompClassPos['CTO Comum'] = CompClassPos['Aluguel'] + CompClassPos['Fundo Promoção'] + CompClassPos['Encargo Comum'] + CompClassPos['F.Reserva Enc.Comum']
-    CompClassPos.rename(columns = {'Total': 'CTO Total'}, inplace = True)
+    CompClassPos['CTO Total'] = CompClassPos['CTO Comum'] + CompClassPos['I.P.T.U.'] + CompClassPos['Água/Esgoto'] + CompClassPos['Ar Condicionado'] + CompClassPos['Energia'] + CompClassPos['Seguro Parte Privativa']
+    CompClassPos.drop(columns = 'Total', inplace = True)
     CompClassPos['Venda/M²'] = CompClassPos['Venda'] / CompClassPos['M2']
     CompClassPos['Aluguel/M²'] = CompClassPos['Aluguel'] / CompClassPos['M2']
     CompClassPos['CTOcomum/M²'] = CompClassPos['CTO Comum'] / CompClassPos['M2']
