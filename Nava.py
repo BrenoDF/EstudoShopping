@@ -10,7 +10,10 @@ st.set_page_config(layout="wide",
 page_title= 'Relatório Nava',
 initial_sidebar_state="collapsed")
 st.logo('Imagens/NAVA-preta.png', icon_image='Imagens/NAVA-preta.png', size='large')
-
+global_widget_keys = ["data"]
+for key in global_widget_keys:
+    if key in st.session_state:
+        st.session_state[key] = st.session_state[key]
 
 # -------------------------------SIDE BAR-------------------------------- #
 
@@ -26,12 +29,10 @@ sss = st.sidebar.toggle("Vendas SSS",
 
 DF_Fluxo, DFLojas = ProcTab.TabelaOriginal(emp)
 
-hoje = date.today()
-hoje = hoje.replace(day=1)
-
 sliderIntervalo = st.sidebar.date_input("Período",
-                     value = (date(2025,1,1),DF_Fluxo[DF_Fluxo['Fluxo de Carros']>0].index.max()),
-                     min_value=date(2018,1,1),
+                     key = 'data',
+                     value = (date(2025,1,1),DFLojas['Data'].max().replace(day=31)),
+                     min_value= date(2018,1,1),
                      max_value=DFLojas['Data'].max().replace(day=31),
                      format= "DD/MM/YYYY"
 )
@@ -72,7 +73,6 @@ with st.sidebar.expander("Filtros Avançados", expanded=False):
 
 
 ## --------------------- Página principal ----------------------------------- ##
-
 
 st.title("Relatório de Performance")
 
