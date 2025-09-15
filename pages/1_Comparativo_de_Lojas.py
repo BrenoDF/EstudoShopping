@@ -11,9 +11,10 @@ page_title= 'Relatório Nava',
 initial_sidebar_state="collapsed")
 st.logo('Imagens/NAVA-preta.png', icon_image='Imagens/NAVA-preta.png', size='large')
 global_widget_keys = ["data"]
-for key in global_widget_keys:
-    if key in st.session_state:
-        st.session_state[key] = st.session_state[key]
+if 'data' in st.session_state:
+  for key in global_widget_keys:
+      if key in st.session_state:
+          st.session_state[key] = st.session_state[key]
 
 # ------------------------------- Trazendo o DF Completo -------------------------------- #
 

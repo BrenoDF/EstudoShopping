@@ -10,6 +10,11 @@ st.set_page_config(layout="wide",
 page_title= 'Análise de CTO',
 initial_sidebar_state="collapsed")
 st.logo('Imagens/NAVA-preta.png', icon_image='Imagens/NAVA-preta.png', size='large')
+global_widget_keys = ["data"]
+if 'data' in st.session_state:
+  for key in global_widget_keys:
+      if key in st.session_state:
+          st.session_state[key] = st.session_state[key]
 
 ## SIDE BAR ##
 st.sidebar.header('Filtros')

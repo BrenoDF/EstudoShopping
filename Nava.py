@@ -11,9 +11,10 @@ page_title= 'Relatório Nava',
 initial_sidebar_state="collapsed")
 st.logo('Imagens/NAVA-preta.png', icon_image='Imagens/NAVA-preta.png', size='large')
 global_widget_keys = ["data"]
-for key in global_widget_keys:
-    if key in st.session_state:
-        st.session_state[key] = st.session_state[key]
+if 'data' in st.session_state:
+  for key in global_widget_keys:
+      if key in st.session_state:
+          st.session_state[key] = st.session_state[key]
 
 # -------------------------------SIDE BAR-------------------------------- #
 
@@ -122,6 +123,7 @@ group_aa  = DFLojasAA.groupby('Data')['Venda'].sum()
 mes_a_mes = pd.DataFrame({'Data':     pd.to_datetime(group_v.index),
                           'Venda':    group_v.values,
                           'VendaAA':  group_aa.values})
+
 mes_a_mes['Variação'] = round(((mes_a_mes['Venda'] / mes_a_mes['VendaAA']) -1) * 100,2)
 
 variacao = (((mes_a_mes['Venda'].sum() / mes_a_mes['VendaAA'].sum()) - 1) * 100).round(2)

@@ -12,11 +12,10 @@ page_title= 'Análise de Loja',
 initial_sidebar_state="collapsed")
 st.logo('Imagens/NAVA-preta.png', icon_image='Imagens/NAVA-preta.png', size='large')
 global_widget_keys = ["data"]
-for key in global_widget_keys:
-    if key in st.session_state:
-        st.session_state[key] = st.session_state[key]
-if not isinstance(st.session_state["data"], tuple):
-  st.session_state["data"] = (st.session_state["data"], st.session_state["data"])
+if 'data' in st.session_state:
+  for key in global_widget_keys:
+      if key in st.session_state:
+          st.session_state[key] = st.session_state[key]
 
 # ------------------------------- Trazendo o DF Completo -------------------------------- #
 
@@ -64,6 +63,7 @@ hoje = hoje.replace(day=1)
 
 sliderIntervalo = st.sidebar.date_input("Período",
                     key='data',
+                    value = (date(2025,1,1),df_final_apenaslojas['Data'].max().replace(day=31)),
                     min_value=date(2018,1,1),
                     max_value=df_final_apenaslojas['Data'].max().replace(day=31),
                     format= "DD/MM/YYYY"
