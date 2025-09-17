@@ -468,7 +468,17 @@ with tabMain:
   VendaMenorQueAA = CriticoAcumulado[CriticoAcumulado['Venda'] < CriticoAcumulado['VendaAA']]
 
   criticoCTOAlto = VendaMenorQueAA[(VendaMenorQueAA['CTO Comum/Venda'] > VendaMenorQueAA['Classificação'].map(regras))]
-  st.dataframe(criticoCTOAlto.reset_index(drop=True), use_container_width=True, hide_index=True)
+  
+  #Pontuando Tabela Critica#
+  config_col_num_crit = ['Venda', 'VendaAA', 'M2', 'CTO Comum', 'Aluguel Mínimo', 'Aluguel Complementar', 'Encargo Comum', 'Desconto', 'Inadimplência']
+  config_col_crit = {
+    'CTO Comum/Venda': st.column_config.NumberColumn( format= '%.2f%%')
+  }
+  for col in config_col_num_crit:
+    config_col_crit[col] = st.column_config.NumberColumn(format='localized')
+  ###
+  
+  st.dataframe(criticoCTOAlto.reset_index(drop=True), use_container_width=True, hide_index=True, column_config=config_col_crit)
 
 with tabDF:
   
@@ -501,14 +511,52 @@ with tabDF:
       )
     } )
   else:
-    st.dataframe(DFLojasAtual, use_container_width=True, hide_index=True, column_config={
+    
+    #Pontuando Tabela#
+    numb_col = ['VendaAA', 'Venda', 'CTO Comum', 'CTO Total', 'Aluguel', 'Desconto', 'Inadimplência', 'Aluguel Mínimo', 
+                'Aluguel Complementar', 'Encargo Comum', 'Aluguel Percentual', 'F.Reserva Enc.Comum', 'Fundo Promoção', 
+                'I.P.T.U.', 'Água/Esgoto', 'Ar Condicionado', 'Energia', 'Multa EDNG (Empreendedor)', 'Seguro Parte Privativa',
+                'Venda/M²', 'Aluguel/M²', 'CTOcomum/M²', 'CTO Total/M²'
+                ]
+    config_col = {
       'Data': st.column_config.DateColumn(
           format="DD/MM/YYYY"
+      ),
+      'CTO Total/Venda': st.column_config.NumberColumn(
+        format="%.2f%%"
+      ),
+      'CTO Comum/Venda': st.column_config.NumberColumn(
+        format="%.2f%%"
+      ),
+      'Data que entrou': st.column_config.DateColumn(
+        format="DD/MM/YYYY"
+      ),
+      'Data que saiu': st.column_config.DateColumn(
+        format="DD/MM/YYYY"
       )
-    } )
+      }
+    
+    
+    
+    for col in numb_col:
+      config_col[col] = st.column_config.NumberColumn(
+          format="localized"
+      )
+    ###
+    
+    st.dataframe(DFLojasAtual, use_container_width=True, hide_index=True, column_config=config_col)
   st.divider()
   st.subheader("Tabela de Fluxo")
-  st.dataframe(DF_FluxoFiltrado, use_container_width=True, hide_index=True)
+  
+  numb_col_fluxo = ['Fluxo de Pessoas', 'Fluxo de Carros', 'Fluxo Pagante', 'Fluxo Mensalista', 'Fluxo Carência', 
+                    'Total Isenções', 'Fluxo de Carros', 'Receita Total Sistema', 'Fluxo de Pessoas AA']
+  config_col_fluxo = {}
+  for col in numb_col_fluxo:
+      config_col_fluxo[col] = st.column_config.NumberColumn(
+          format="localized"
+      )
+  
+  st.dataframe(DF_FluxoFiltrado, use_container_width=True, hide_index=True, column_config=config_col_fluxo)
 
 
 with tabCTO:
@@ -521,12 +569,19 @@ with tabCTO:
       'Desconto': 'sum',
       'Inadimplência': 'sum'
       }).reset_index()
-  # st.markdown('''Lembrar de separar por Classificação, talvez colocar um filtro entre cada tipo?
-  #             Fazer um boxplot de CTO/Venda entre as classificações e etc.
-  #             Ver quais tipos de operações tem mais desconto e inadimplência graficamente.
-  #             ''')
   tabela_cto = tabela_cto[['Classificação', 'Segmento', 'Atividade', 'Venda', 'Aluguel', 'CTO Comum', 'CTO Total', 'Desconto', 'Inadimplência']]
 
+
+  #Pontuando Tabela CTO
+  col_num_cto = ['Venda', 'Aluguel', 'CTO Comum', 'CTO Total', 'Desconto', 'Inadimplência']
+
+  config_col_cto = {
+    'CTO Comum/Venda': st.column_config.NumberColumn(format= '%.2f%%')
+  }
+  
+  for col in col_num_cto:
+    config_col_cto[col] = st.column_config.NumberColumn(format="localized")
+  ###
   agrupamento_cto = st.segmented_control(
                     'Agrupar por:',
                     options = ['Classificação', 'Segmento', 'Atividade'],
@@ -543,7 +598,10 @@ with tabCTO:
           'Inadimplência': 'sum'
       }).reset_index()
       tabela_cto['CTO Comum/Venda'] = round((tabela_cto['CTO Comum'] / tabela_cto['Venda']) * 100, 2)
-      st.dataframe(tabela_cto, use_container_width=True, hide_index=True)
+      
+        
+      
+      st.dataframe(tabela_cto, use_container_width=True, hide_index=True, column_config = config_col_cto)
       
       coluna_grafico_cto1, coluna_grafico_cto2 = st.columns(2)
       with coluna_grafico_cto1:
@@ -569,12 +627,12 @@ with tabCTO:
         st.plotly_chart(fig2, use_container_width=True)
         df_cto_lojas = DFLojasAtual.groupby(['Luc', 'Nome Fantasia', 'Classificação', 'Segmento', 'Atividade'])[['Venda', 'CTO Comum', 'Aluguel', 'CTO Total', 'Desconto', 'Inadimplência']].sum().reset_index()
         df_cto_lojas['CTO Comum/Venda'] = round((df_cto_lojas['CTO Comum'] / df_cto_lojas['Venda']) * 100, 2)
-      st.dataframe(df_cto_lojas, hide_index=True, use_container_width=True)
+      st.dataframe(df_cto_lojas, hide_index=True, use_container_width=True, column_config = config_col_cto)
       
   else:
       tabela_cto['CTO Comum/Venda'] = round((tabela_cto['CTO Comum'] / tabela_cto['Venda']) * 100, 2)
-    
-      st.dataframe(tabela_cto, use_container_width=True, hide_index=True)
+      
+      st.dataframe(tabela_cto, use_container_width=True, hide_index=True, column_config= config_col_cto)
       st.info('Selecione um agrupamento para ver os gráficos!', icon="ℹ️")
 
   
