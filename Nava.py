@@ -70,6 +70,18 @@ with st.sidebar.expander("Filtros Avançados", expanded=False):
         selection_mode = 'multi',
         default = DFLojas['Piso'].dropna().unique().tolist()
     )
+    with st.expander('Filtros mais avançados', expanded=False):
+        padrao_selecao = DFLojas['Segmento'].dropna().unique().tolist()
+        st.session_state.setdefault('segmento_multiselect', padrao_selecao)
+        segmento_filtro = st.multiselect(
+            "Segmentos",
+            options = padrao_selecao,
+            key= 'segmento_multiselect'
+        )
+        botao_reset_segmento = st.button('Resetar Segmentos')
+        if botao_reset_segmento:
+            segmento_filtro = padrao_selecao
+            st.session_state.segmento_multiselect = padrao_selecao
 
 
 
@@ -80,6 +92,7 @@ st.title("Relatório de Performance")
 # Aplicando os Filtros do SideBar
 filtroSideBar = ((DFLojas['Classificação'].isin(ClassificacaoSelecionada)) &
                   (DFLojas['Piso'].isin(PisosSelecionados)) &
+                  (DFLojas['Segmento'].isin(segmento_filtro)) &
                   ((LadoSelecionado == 'Ambos')
                     |
                     (DFLojas['Lado']==LadoSelecionado)
@@ -139,6 +152,10 @@ figVendatotal = px.line(
   color_discrete_map={'Venda':'#00b7db','VendaAA':'#000000'}, title='Vendas por Mês'
 )
 
+figVendatotal.update_layout(
+  separators = ',.'
+)
+
 for trace in figVendatotal.data:
     if trace.name == 'Venda':
         trace.hovertemplate = (
@@ -190,10 +207,7 @@ with tabMain:
       
       
       
-      DF_ApenasLojasClassificacao['Variacao'] = round((DF_ApenasLojasClassificacao['Venda'] / DF_ApenasLojasClassificacao['VendaAA'] - 1)*100,2)
-      DF_ApenasLojasClassificacao['Variacao'] = DF_ApenasLojasClassificacao['Variacao'].apply(lambda x: f"{x:.2f}%" if x >= 0 else f"{x:.2f}%")
-      
-      DF_ApenasLojasClassificacao['Data'] = DF_ApenasLojasClassificacao['Data'].dt.strftime('%m/%Y')
+      DF_ApenasLojasClassificacao['Variacao'] = (DF_ApenasLojasClassificacao['Venda'] / DF_ApenasLojasClassificacao['VendaAA'] - 1)
       
       ordem = DF_ApenasLojasClassificacao.groupby('Classificação')['Venda'].sum().sort_values(ascending=False).index.tolist()
 
@@ -202,13 +216,21 @@ with tabMain:
           x='Venda',
           y='Classificação',
           orientation='h',
-          hover_data=['VendaAA', 'Variacao', 'Data'],
+          hover_data={'VendaAA': ':,.2f',
+                      'Variacao': ':,.2%',
+                      'Data':'|%m/%Y',
+          },
           color='Classificação',
           color_discrete_sequence=px.colors.sequential.Blues[::-1],
           category_orders={'Classificação': ordem}, title='Vendas por Classificação',
       )
       fig.update_layout(height=450,
-                        showlegend=False)
+                        showlegend=False,
+                        separators = ',.')
+      fig.update_xaxes(
+        hoverformat = ',.2f'
+      )
+      
       st.plotly_chart(fig, use_container_width=True)
 
   
@@ -346,7 +368,7 @@ with tabMain:
   }
 
   FluxoMes = DF_FluxoFiltrado.groupby(['Mês','Ano'])[['Fluxo de Pessoas', 'Fluxo de Pessoas AA']].sum().reset_index()
-  FluxoMes['Variação'] = round((FluxoMes['Fluxo de Pessoas'] / FluxoMes['Fluxo de Pessoas AA'] - 1) * 100, 2)
+  FluxoMes['Variação'] = (FluxoMes['Fluxo de Pessoas'] / FluxoMes['Fluxo de Pessoas AA'] - 1)
   FluxoMes['Data'] = pd.to_datetime(FluxoMes['Ano'].astype(str) + '/' + FluxoMes['Mês'].str.lower().map(meses_dict).astype(str)+'/'+ '01')
   FluxoMes = FluxoMes.sort_values(by='Data')
   FluxoMes = FluxoMes.drop(columns=['Mês', 'Ano'])
@@ -361,7 +383,22 @@ with tabMain:
       custom_data=['Variação'],
       color_discrete_map={'Fluxo de Pessoas':'#00b7db','Fluxo de Pessoas AA':'#000000'}
   )
-  #
+  figFluxo.update_layout(
+    separators = ',.'
+  )
+  for trace in figFluxo.data:
+      if trace.name == 'Fluxo de Pessoas':
+          trace.hovertemplate = (
+              "Data: %{x|%m/%Y}<br>"
+              "Fluxo de Pessoas: %{y:,.0f}<br>"
+              "Variação: %{customdata[0]:.2%}<extra></extra>"
+          )
+      else:
+          trace.hovertemplate = (
+              "Data: %{x|%m/%Y}<br>"
+              f"{trace.name}: "+"%{y:,.0f}<extra></extra>"
+          )
+
   with colx:
     st.plotly_chart(figFluxo, use_container_width=True)
     
@@ -469,14 +506,7 @@ with tabMain:
 
   criticoCTOAlto = VendaMenorQueAA[(VendaMenorQueAA['CTO Comum/Venda'] > VendaMenorQueAA['Classificação'].map(regras))]
   
-  #Pontuando Tabela Critica#
-  config_col_num_crit = ['Venda', 'VendaAA', 'M2', 'CTO Comum', 'Aluguel Mínimo', 'Aluguel Complementar', 'Encargo Comum', 'Desconto', 'Inadimplência']
-  config_col_crit = {
-    'CTO Comum/Venda': st.column_config.NumberColumn( format= '%.2f%%')
-  }
-  for col in config_col_num_crit:
-    config_col_crit[col] = st.column_config.NumberColumn(format='localized')
-  ###
+  config_col_crit = ProcTab.config_tabela(criticoCTOAlto) #pontuando tabela
   
   st.dataframe(criticoCTOAlto.reset_index(drop=True), use_container_width=True, hide_index=True, column_config=config_col_crit)
 
@@ -501,60 +531,26 @@ with tabDF:
         'Lado': 'last'
     })
     DFLojasAtualAcumulado['CTO Comum/Venda'] = round((DFLojasAtual['CTO Comum'] / DFLojasAtual['Venda']) * 100, 2)
-    DFLojasAtualAcumulado['Var.Venda'] = round(((DFLojasAtualAcumulado['Venda'] / DFLojasAtualAcumulado['VendaAA'])-1)*100,2)
+    DFLojasAtualAcumulado['% Venda AA'] = round(((DFLojasAtualAcumulado['Venda'] / DFLojasAtualAcumulado['VendaAA'])-1)*100,2)
     DFLojasAtualAcumulado['Aluguel/m²'] = round((DFLojasAtualAcumulado['Aluguel'] / DFLojasAtualAcumulado['M2']),2)
     DFLojasAtualAcumulado['Venda/m²'] = round((DFLojasAtualAcumulado['Venda'] / DFLojasAtualAcumulado['M2']),2)
-    DFLojasAtualAcumulado = DFLojasAtualAcumulado[['Luc', 'Nome Fantasia', 'M2', 'VendaAA', 'Venda', 'Var.Venda', 'CTO Comum', 'CTO Comum/Venda', 'CTO Total', 'Aluguel', 'Desconto', 'Inadimplência', 'Classificação', 'Segmento', 'Atividade', 'Piso', 'Lado']]
-    st.dataframe(DFLojasAtualAcumulado, use_container_width=True, hide_index=True, column_config={
-      'Data': st.column_config.DateColumn(
-          format="DD/MM/YYYY"
-      )
-    } )
+    DFLojasAtualAcumulado = DFLojasAtualAcumulado[['Luc', 'Nome Fantasia', 'M2', 'VendaAA', 'Venda', '% Venda AA', 
+                                                   'CTO Comum', 'CTO Comum/Venda', 'CTO Total', 'Aluguel', 
+                                                   'Desconto', 'Inadimplência', 'Classificação', 'Segmento', 
+                                                   'Atividade', 'Piso', 'Lado']]
+    
+    config_col = ProcTab.config_tabela(DFLojasAtualAcumulado) #pontuando tabela
+    
+    st.dataframe(DFLojasAtualAcumulado.style.applymap(ProcTab.colorir_var_venda, subset = ['% Venda AA']), use_container_width=True, hide_index=True, column_config = config_col)
   else:
     
-    #Pontuando Tabela#
-    numb_col = ['VendaAA', 'Venda', 'CTO Comum', 'CTO Total', 'Aluguel', 'Desconto', 'Inadimplência', 'Aluguel Mínimo', 
-                'Aluguel Complementar', 'Encargo Comum', 'Aluguel Percentual', 'F.Reserva Enc.Comum', 'Fundo Promoção', 
-                'I.P.T.U.', 'Água/Esgoto', 'Ar Condicionado', 'Energia', 'Multa EDNG (Empreendedor)', 'Seguro Parte Privativa',
-                'Venda/M²', 'Aluguel/M²', 'CTOcomum/M²', 'CTO Total/M²'
-                ]
-    config_col = {
-      'Data': st.column_config.DateColumn(
-          format="DD/MM/YYYY"
-      ),
-      'CTO Total/Venda': st.column_config.NumberColumn(
-        format="%.2f%%"
-      ),
-      'CTO Comum/Venda': st.column_config.NumberColumn(
-        format="%.2f%%"
-      ),
-      'Data que entrou': st.column_config.DateColumn(
-        format="DD/MM/YYYY"
-      ),
-      'Data que saiu': st.column_config.DateColumn(
-        format="DD/MM/YYYY"
-      )
-      }
-    
-    
-    
-    for col in numb_col:
-      config_col[col] = st.column_config.NumberColumn(
-          format="localized"
-      )
-    ###
+    config_col = ProcTab.config_tabela(DFLojasAtual) #pontuando tabela
     
     st.dataframe(DFLojasAtual, use_container_width=True, hide_index=True, column_config=config_col)
   st.divider()
   st.subheader("Tabela de Fluxo")
   
-  numb_col_fluxo = ['Fluxo de Pessoas', 'Fluxo de Carros', 'Fluxo Pagante', 'Fluxo Mensalista', 'Fluxo Carência', 
-                    'Total Isenções', 'Fluxo de Carros', 'Receita Total Sistema', 'Fluxo de Pessoas AA']
-  config_col_fluxo = {}
-  for col in numb_col_fluxo:
-      config_col_fluxo[col] = st.column_config.NumberColumn(
-          format="localized"
-      )
+  config_col_fluxo = ProcTab.config_tabela(DF_FluxoFiltrado) #pontuando tabela
   
   st.dataframe(DF_FluxoFiltrado, use_container_width=True, hide_index=True, column_config=config_col_fluxo)
 
@@ -572,16 +568,7 @@ with tabCTO:
   tabela_cto = tabela_cto[['Classificação', 'Segmento', 'Atividade', 'Venda', 'Aluguel', 'CTO Comum', 'CTO Total', 'Desconto', 'Inadimplência']]
 
 
-  #Pontuando Tabela CTO
-  col_num_cto = ['Venda', 'Aluguel', 'CTO Comum', 'CTO Total', 'Desconto', 'Inadimplência']
-
-  config_col_cto = {
-    'CTO Comum/Venda': st.column_config.NumberColumn(format= '%.2f%%')
-  }
-  
-  for col in col_num_cto:
-    config_col_cto[col] = st.column_config.NumberColumn(format="localized")
-  ###
+  config_col_cto = ProcTab.config_tabela(tabela_cto) #pontuando tabela
   agrupamento_cto = st.segmented_control(
                     'Agrupar por:',
                     options = ['Classificação', 'Segmento', 'Atividade'],

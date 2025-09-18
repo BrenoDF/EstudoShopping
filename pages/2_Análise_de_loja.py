@@ -230,5 +230,7 @@ else:
     loja_sem_agrupamento['Aluguel/M²'] = round(loja_sem_agrupamento['Aluguel']/loja_sem_agrupamento['M2'],2)
     loja_sem_agrupamento = loja_sem_agrupamento[['Data', 'Nome Fantasia', 'M2', 'Venda', 'VendaAA', '% Venda AA', 'Venda/M²', 
                                                 'Aluguel', 'Aluguel/M²','CTO Comum', 'CTO Comum/Venda', 'CTOcomum/M²', 'CTO Total', 'Desconto', 'Inadimplência']]
+    
+    config_num_loja = ProcTab.config_tabela(loja_sem_agrupamento) #pontuando tabela
 
-    st.dataframe(loja_sem_agrupamento, hide_index=True, use_container_width=True)
+    st.dataframe(loja_sem_agrupamento.style.applymap(ProcTab.colorir_var_venda, subset = ['% Venda AA']), hide_index=True, use_container_width=True, column_config=config_num_loja)

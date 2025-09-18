@@ -132,7 +132,10 @@ with comparativo_1:
                     help=f"Total de {verba_selecionada} da loja {loja} no período selecionado. E a variação percentual do primeiro para o último mês.",
                     delta=(f"{delta_valor:.2%}" if pd.notna(delta_valor) else "—")
                 )
-        st.dataframe(df_com_lojas_selecionadas, use_container_width=True, hide_index=True)
+        
+        config_loja_sel = ProcTab.config_tabela(df_com_lojas_selecionadas) #pontuando tabela        
+                
+        st.dataframe(df_com_lojas_selecionadas.style.applymap(ProcTab.colorir_var_venda, subset = ['% Venda AA']), use_container_width=True, hide_index=True, column_config=config_loja_sel)
 
     st.divider()
 
@@ -223,7 +226,10 @@ with comparativo_2:
             st.markdown(f"A loja :blue-background[{lojas_selecionadas2}] compõem cerca de :blue[{delta_comparativo}%] de {verba_selecionada2} comparado a {tipo_loja_selecionado} e uma diferença de **R${abs(media_loja_unica-media_todas_lojas).round(2)}** na média entre eles no {emp_selecionado}.", width="stretch")
             st.toggle("Expandir tabela", key='toggle_tabela_comparativo1')
         if st.session_state['toggle_tabela_comparativo1']:
-            st.dataframe(df_a_comparar, use_container_width=True, hide_index=True)
+            
+            config_num_comparativo = ProcTab.config_tabela(df_a_comparar) #pontuando tabela
+            
+            st.dataframe(df_a_comparar.style.applymap(ProcTab.colorir_var_venda, subset = ['% Venda AA']), use_container_width=True, hide_index=True, column_config=config_num_comparativo)
 
     ##------------------------------- Comparativo por Piso -------------------------------- #
 
@@ -264,7 +270,10 @@ with comparativo_2:
         with subcoluna2_piso:
             st.toggle("Expandir tabela", key='toggle_tabela_comparativo2')
         if st.session_state['toggle_tabela_comparativo2']:
-            st.dataframe(df_a_comparar_com_piso, use_container_width=True, hide_index=True)
+            
+            config_comp_piso = ProcTab.config_tabela(df_a_comparar_com_piso) #pontuando tabela
+            
+            st.dataframe(df_a_comparar_com_piso.style.applymap(ProcTab.colorir_var_venda, subset = ['% Venda AA']), use_container_width=True, hide_index=True, column_config=config_comp_piso)
 
 
 

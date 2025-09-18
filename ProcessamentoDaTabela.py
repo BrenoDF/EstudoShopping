@@ -65,7 +65,6 @@ def TabelaOriginal(emp):
     CompClassPos['VendaAA'] = CompClassPos.groupby('ID')['Venda'].shift(12)
     CompClassPos.drop(columns = ['Corredor'], inplace = True)
     CompClassPos['% Venda AA'] =  [(((v / vAA)-1)*100) if v != 0 and pd.notna(vAA) and vAA != 0 else np.nan for v, vAA in zip(CompClassPos['Venda'], CompClassPos['VendaAA'])]
-    CompClassPos['% Venda AA'] = [str(round(x, 2)) + '%' if pd.notna(x) else x for x in CompClassPos['% Venda AA']]
     CompClassPos = CompClassPos[~CompClassPos['Luc'].str.contains(r'[DMX]', na = False, case = False)]
     CompClassPos['Aluguel'] = (
 
@@ -101,7 +100,25 @@ def formata_numero(valor, prefixo = ''):
         valor /= 1000
     return f"{prefixo}{valor:.2f} milhões"
 
-# def config_tabela(tabela):
+def colorir_var_venda(val):
+    if val > 0:
+        return "color: green;"
+    else:
+        return "color: red;"
+
+def config_tabela(tabela):
+    config = {}
+    for col in tabela.select_dtypes(include=['number', 'datetime']).columns:
+        if pd.api.types.is_numeric_dtype(tabela[col]):
+            if col in ['CTO Comum/Venda', 'CTO Total/Venda', '% Venda AA']:
+                config[col] = st.column_config.NumberColumn(format="%.2f%%")
+            else:
+                config[col] = st.column_config.NumberColumn(format="localized")
+        
+        elif pd.api.types.is_datetime64_any_dtype(tabela[col]):
+            config[col] = st.column_config.DatetimeColumn(format="DD/MM/YYYY")
+    
+    return config
     
     
 ##################
