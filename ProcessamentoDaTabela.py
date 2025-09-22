@@ -100,6 +100,9 @@ def formata_numero(valor, prefixo = ''):
         valor /= 1000
     return f"{prefixo}{valor:.2f} milhões"
 
+def separador_br(valor: float) -> str:
+    return f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
 def colorir_var_venda(val):
     if val > 0:
         return "color: green;"
