@@ -17,9 +17,9 @@ pathFluxoVB = 'Controle Tesouraria Viabrasil.xlsx'
 def TabelaOriginal(emp=None):
     
     engine = create_engine(
-    "mssql+pyodbc://07451_920722_BI:354255%40@129.148.44.54/"
-    "07451_ViashoppingBarreiro_GBI_Shopping"
-    "?driver=ODBC+Driver+17+for+SQL+Server"
+       st.secrets["ENGINE"] + 
+        "07451_ViashoppingBarreiro_GBI_Shopping" +
+        "?driver=ODBC+Driver+17+for+SQL+Server"
 )
 
 
