@@ -18,32 +18,7 @@ if 'data' in st.session_state:
 
 # ------------------------------- Trazendo o DF Completo -------------------------------- #
 
-empresas = ['Viashopping', 'Viabrasil']
-
-dfs_compclasspos = []
-dfs_fluxo = []
-dfs_apenaslojas = []
-
-for emp in empresas:
-    DF_Fluxo, DF_ApenasLojas = ProcTab.TabelaOriginal(emp)
-
-    # anota a origem sem tocar na função
-    DF_Fluxo = DF_Fluxo.copy()
-    DF_ApenasLojas = DF_ApenasLojas.copy()
-
-    DF_Fluxo['Empreendimento'] = emp
-    DF_ApenasLojas['Empreendimento'] = emp
-
-    dfs_fluxo.append(DF_Fluxo)
-    dfs_apenaslojas.append(DF_ApenasLojas)
-
-df_final_fluxo = pd.concat(dfs_fluxo)  # mantém o índice Data
-df_final_apenaslojas = pd.concat(dfs_apenaslojas, ignore_index=True)
-
-
-# ------------------------------- --------------------- -------------------------------- #
-
-
+DF_Fluxo, DFLojas = ProcTab.TabelaOriginal()
 
 # -------------------------------SIDE BAR-------------------------------- #
 
@@ -61,9 +36,9 @@ with comparativo_1:
 
         sliderIntervalo = st.date_input("Período",
                             key='data',
-                            value = (date(2025,1,1),df_final_apenaslojas['Data'].max().replace(day=31)),
+                            value = (date(2025,1,1),(pd.Timestamp(date.today()) - pd.offsets.MonthEnd(1))),
                             min_value=date(2018,1,1),
-                            max_value=df_final_apenaslojas['Data'].max().replace(day=31),
+                            max_value=DFLojas['Data'].max(),
                             format= "DD/MM/YYYY"
         )
         inicio, fim = sliderIntervalo
@@ -74,7 +49,7 @@ with comparativo_1:
 
 
 
-    df_apenaslojas_filtrado_final = df_final_apenaslojas[(df_final_apenaslojas['Data'] >= inicio) & (df_final_apenaslojas['Data'] <= fim)]
+    df_apenaslojas_filtrado_final = DFLojas[(DFLojas['Data'] >= inicio) & (DFLojas['Data'] <= fim)]
 
     with col2:
 
@@ -128,7 +103,7 @@ with comparativo_1:
 
                 st.metric(
                     label=str(loja),
-                    value=round(float(df_loja[verba_selecionada].sum()), 2),
+                    value=ProcTab.separador_br(float(df_loja[verba_selecionada].sum())),
                     help=f"Total de {verba_selecionada} da loja {loja} no período selecionado. E a variação percentual do primeiro para o último mês.",
                     delta=(f"{delta_valor:.2%}" if pd.notna(delta_valor) else "—")
                 )
@@ -148,9 +123,9 @@ with comparativo_2:
         hoje2 = hoje2.replace(day=1)
 
         sliderIntervalo2 = st.date_input("Período",
-                            value = (date(2025,1,1),df_final_apenaslojas['Data'].max()),
+                            value = (date(2025,1,1),DFLojas['Data'].max()),
                             min_value=date(2018,1,1),
-                            max_value=df_final_apenaslojas['Data'].max(),
+                            max_value=DFLojas['Data'].max(),
                             format= "DD/MM/YYYY",
                             key='date_input2'
         )
@@ -161,7 +136,7 @@ with comparativo_2:
         fim2 = pd.to_datetime(fim2)
 
 
-    df_apenaslojas_filtrado_final_2 = df_final_apenaslojas[(df_final_apenaslojas['Data'] >= inicio2) & (df_final_apenaslojas['Data'] <= fim2)]
+    df_apenaslojas_filtrado_final_2 = DFLojas[(DFLojas['Data'] >= inicio2) & (DFLojas['Data'] <= fim2)]
 
 
     with col2:

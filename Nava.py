@@ -32,9 +32,9 @@ DF_Fluxo, DFLojas = ProcTab.TabelaOriginal(emp)
 
 sliderIntervalo = st.sidebar.date_input("Período",
                      key = 'data',
-                     value = (date(2025,1,1),DFLojas['Data'].max().replace(day=31)),
+                     value = (date(2025,1,1),(pd.Timestamp(date.today()) - pd.offsets.MonthEnd(1))),
                      min_value= date(2018,1,1),
-                     max_value=DFLojas['Data'].max().replace(day=31),
+                     max_value=(DFLojas['Data'].max()) + pd.offsets.MonthEnd(0),
                      format= "DD/MM/YYYY"
 )
 inicio, fim = sliderIntervalo
@@ -60,28 +60,29 @@ with st.sidebar.expander("Filtros Avançados", expanded=False):
 
     LadoSelecionado = st.segmented_control(
         'Lado:',
-        options = ['Lado A', 'Lado B', 'Ambos'],
+        options = ['LADO A', 'LADO B', 'Ambos'],
         default = 'Ambos'
     )
 
     PisosSelecionados = st.pills(
         'Selecione os pisos que deseja visualizar',
-        options = DFLojas['Piso'].dropna().unique().tolist(),
+        options = ['PISO 1', 'PISO 2', 'PISO 3', 'PISO 4', 'PISO 5', 'PISO 7'],
         selection_mode = 'multi',
-        default = DFLojas['Piso'].dropna().unique().tolist()
+        default = ['PISO 1', 'PISO 2', 'PISO 3', 'PISO 4']
     )
-    with st.expander('Filtros mais avançados', expanded=False):
-        padrao_selecao = DFLojas['Segmento'].dropna().unique().tolist()
-        st.session_state.setdefault('segmento_multiselect', padrao_selecao)
-        segmento_filtro = st.multiselect(
-            "Segmentos",
-            options = padrao_selecao,
-            key= 'segmento_multiselect'
-        )
-        botao_reset_segmento = st.button('Resetar Segmentos')
-        if botao_reset_segmento:
-            segmento_filtro = padrao_selecao
-            st.session_state.segmento_multiselect = padrao_selecao
+    # with st.expander('Filtros mais avançados', expanded=False):
+    #     padrao_selecao = DFLojas['Segmento'].dropna().unique().tolist()
+    #     st.session_state.setdefault('segmento_multiselect', padrao_selecao)
+    #     segmento_filtro = st.multiselect(
+    #         "Segmentos",
+    #         default= padrao_selecao,
+    #         options = padrao_selecao,
+    #         key= 'segmento_multiselect'
+    #     )
+    #     botao_reset_segmento = st.button('Resetar Segmentos')
+    #     if botao_reset_segmento:
+    #         segmento_filtro = padrao_selecao
+    #         st.session_state.segmento_multiselect = padrao_selecao
 
 
 
@@ -92,7 +93,7 @@ st.title("Relatório de Performance")
 # Aplicando os Filtros do SideBar
 filtroSideBar = ((DFLojas['Classificação'].isin(ClassificacaoSelecionada)) &
                   (DFLojas['Piso'].isin(PisosSelecionados)) &
-                  (DFLojas['Segmento'].isin(segmento_filtro)) &
+                  # (DFLojas['Segmento'].isin(segmento_filtro)) &
                   ((LadoSelecionado == 'Ambos')
                     |
                     (DFLojas['Lado']==LadoSelecionado)
@@ -330,13 +331,16 @@ with tabMain:
   inicioF = pd.to_datetime(inicioF)
   fimF = pd.to_datetime(fimF)
 
-  DF_FluxoFiltrado = DF_Fluxo[(DF_Fluxo.index >= inicioF)&(DF_Fluxo.index <= fimF)]
-  DF_FluxoFiltradoAA = DF_Fluxo[(DF_Fluxo.index >= inicioF - relativedelta(years=1))&(DF_Fluxo.index <= fimF - relativedelta(years=1))]
+  DF_FluxoFiltrado = DF_Fluxo[(DF_Fluxo['Data'] >= inicioF)&(DF_Fluxo['Data'] <= fimF)]
+  DF_FluxoFiltradoAA = DF_Fluxo[(DF_Fluxo['Data'] >= inicioF - relativedelta(years=1))&(DF_Fluxo['Data'] <= fimF - relativedelta(years=1))]
 
-  DF_FluxoMap = DF_Fluxo['Fluxo de Pessoas'].to_dict()
-  DF_FluxoFiltrado['Fluxo de Pessoas AA'] = DF_FluxoFiltrado.index.map(
-    lambda d: DF_FluxoMap.get(d - pd.DateOffset(years=1), 0)
-    )
+  # cria uma base "AA" deslocada +1 ano e junta por Data
+  aa = DF_Fluxo[['Data','Fluxo de Pessoas']].copy()
+  aa['Data'] = aa['Data'] + pd.DateOffset(years=1)
+  aa = aa.rename(columns={'Fluxo de Pessoas': 'Fluxo de Pessoas AA'})
+
+  DF_FluxoFiltrado = DF_FluxoFiltrado.merge(aa, on='Data', how='left')
+  DF_FluxoFiltrado['Fluxo de Pessoas AA'] = DF_FluxoFiltrado['Fluxo de Pessoas AA'].fillna(0)
 
   Pagantes_Fluxo = DF_FluxoFiltrado.melt(
       id_vars=['Dia','Mês', 'Ano'],
@@ -406,7 +410,7 @@ with tabMain:
     
   with coly:
       atual = DF_FluxoFiltrado['Fluxo de Pessoas'].sum()
-      anterior = DF_FluxoFiltradoAA['Fluxo de Pessoas'].sum()
+      anterior = DF_FluxoFiltrado['Fluxo de Pessoas AA'].sum()
 
       delta_pct = ((atual - anterior) / anterior) * 100
 
