@@ -5,3 +5,4 @@ openpyxl
 streamlit
 matplotlib
 seaborn
+sqlalchemy
