@@ -12,11 +12,10 @@ page_title= 'Análise de Loja',
 initial_sidebar_state="collapsed")
 st.logo('Imagens/NAVA-preta.png', icon_image='Imagens/NAVA-preta.png', size='large')
 global_widget_keys = ["data"]
-for key in global_widget_keys:
-    if key in st.session_state:
-        st.session_state[key] = st.session_state[key]
-if not isinstance(st.session_state["data"], tuple):
-  st.session_state["data"] = (st.session_state["data"], st.session_state["data"])
+if 'data' in st.session_state:
+  for key in global_widget_keys:
+      if key in st.session_state:
+          st.session_state[key] = st.session_state[key]
 
 # ------------------------------- Trazendo o DF Completo -------------------------------- #
 
@@ -64,8 +63,9 @@ hoje = hoje.replace(day=1)
 
 sliderIntervalo = st.sidebar.date_input("Período",
                     key='data',
+                    value = (date(2025,1,1),(pd.Timestamp(date.today()) - pd.offsets.MonthEnd(1))),
                     min_value=date(2018,1,1),
-                    max_value=df_final_apenaslojas['Data'].max().replace(day=31),
+                    max_value=df_final_apenaslojas['Data'].max(),
                     format= "DD/MM/YYYY"
 )
 inicio, fim = sliderIntervalo
@@ -196,25 +196,25 @@ else:
 
 
     html = html.replace('class="title">Nome_Loja', f'class="title">{nome}')
-    html = html.replace('class="metric-value">venda_valor', f'class="metric-value">{venda}')
-    html = html.replace('class="metric-value">vendaaa_valor', f'class="metric-value">{venda_aa}')
+    html = html.replace('class="metric-value">venda_valor', f'class="metric-value">{ProcTab.separador_br(venda)}')
+    html = html.replace('class="metric-value">vendaaa_valor', f'class="metric-value">{ProcTab.separador_br(venda_aa)}')
     html = html.replace('class="metric-value ok">var_venda_valor', f'class="metric-value {cls(variacao_venda)}">{variacao_venda}{"%" if variacao_venda is not None else ""}')
-    html = html.replace('class="value">m2_valor', f'class="value muted">{m2}')
-    html = html.replace('class="metric-value">venda_media_valor', f'class="metric-value">{arrendondador(venda_media)}')
-    html = html.replace('class="value">aluguel_valor', f'class="value muted">{aluguel}')
-    html = html.replace('class="metric-value">venda_por_m2_valor', f'class="metric-value">{venda_p_m2}')
+    html = html.replace('class="value">m2_valor', f'class="value muted">{ProcTab.separador_br(m2)}')
+    html = html.replace('class="metric-value">venda_media_valor', f'class="metric-value">{ProcTab.separador_br(arrendondador(venda_media))}')
+    html = html.replace('class="value">aluguel_valor', f'class="value muted">{ProcTab.separador_br(aluguel)}')
+    html = html.replace('class="metric-value">venda_por_m2_valor', f'class="metric-value">{ProcTab.separador_br(venda_p_m2)}')
     html = html.replace('class="metric-value ok">venda_por_cto_comum_valor', f'class="metric-value {"ok" if venda_por_cto_comum<=regra_map else "warn"}">{venda_por_cto_comum}%')
-    html = html.replace('class="value warn">inadimplencia_mes_valor', f'class="value {'muted' if loja["Inadimplência"].item() == 0 else 'warn'}">{arrendondador(loja["Inadimplência"].item())}')
-    html = html.replace('class="value warn">desconto_valor', f'class="value {'muted' if loja["Desconto"].item() == 0 else 'warn'}">{arrendondador(loja["Desconto"].item())}')
-    html = html.replace('class="metric-value">cto_comum_valor', f'class="metric-value muted">{arrendondador(loja["CTO Comum"].item())}')
-    html = html.replace('class="metric-value">cto_total_valor', f'class="metric-value muted">{arrendondador(loja["CTO Total"].item())}')
-    html = html.replace('class="metric-value">cto_comum_por_m2', f'class="metric-value muted">{arrendondador(loja["CTO Comum"].item()/m2)}')
+    html = html.replace('class="value warn">inadimplencia_mes_valor', f'class="value {'muted' if loja["Inadimplência"].item() == 0 else 'warn'}">{ProcTab.separador_br(arrendondador(loja["Inadimplência"].item()))}')
+    html = html.replace('class="value warn">desconto_valor', f'class="value {'muted' if loja["Desconto"].item() == 0 else 'warn'}">{ProcTab.separador_br(arrendondador(loja["Desconto"].item()))}')
+    html = html.replace('class="metric-value">cto_comum_valor', f'class="metric-value muted">{ProcTab.separador_br(arrendondador(loja["CTO Comum"].item()))}')
+    html = html.replace('class="metric-value">cto_total_valor', f'class="metric-value muted">{ProcTab.separador_br(arrendondador(loja["CTO Total"].item()))}')
+    html = html.replace('class="metric-value">cto_comum_por_m2', f'class="metric-value muted">{ProcTab.separador_br(arrendondador(loja["CTO Comum"].item()/m2))}')
     html = html.replace('class="metric-value muted">segmento_e_piso_valor', f'class="metric-value muted">{segmento_selecionado} / {piso_selecionado} - {lado_selecionado}')
-    html = html.replace('class="metric-value">venda_media_segmento', f'class="metric-value muted">{arrendondador(venda_media_segmento)}')
-    html = html.replace('class="metric-value">venda_media_piso', f'class="metric-value muted">{arrendondador(venda_media_piso)}')
-    html = html.replace('class="value">aluguel_m2_valor', f'class="value muted">{aluguel_m2}')
+    html = html.replace('class="metric-value">venda_media_segmento', f'class="metric-value muted">{ProcTab.separador_br(arrendondador(venda_media_segmento))}')
+    html = html.replace('class="metric-value">venda_media_piso', f'class="metric-value muted">{ProcTab.separador_br(arrendondador(venda_media_piso))}')
+    html = html.replace('class="value">aluguel_m2_valor', f'class="value muted">{ProcTab.separador_br(aluguel_m2)}')
     html = html.replace('class="value">tempo_op_valor', f'class="value muted">{tempo_operacao} meses')
-    html = html.replace('class="metric-value">cto_comum_medio', f'class="metric-value muted">{arrendondador(cto_comum_medio)}')
+    html = html.replace('class="metric-value">cto_comum_medio', f'class="metric-value muted">{ProcTab.separador_br(arrendondador(cto_comum_medio))}')
     html = html.replace('class="period-card">periodo_valor', f'class="period-card"> Periodo: {inicio.strftime("%d/%m/%Y")} - {fim.strftime("%d/%m/%Y")}')
     html = html.replace('class="period-card">empreendimento', f'class="period-card">{loja["Empreendimento"].item()}')
 
@@ -230,5 +230,7 @@ else:
     loja_sem_agrupamento['Aluguel/M²'] = round(loja_sem_agrupamento['Aluguel']/loja_sem_agrupamento['M2'],2)
     loja_sem_agrupamento = loja_sem_agrupamento[['Data', 'Nome Fantasia', 'M2', 'Venda', 'VendaAA', '% Venda AA', 'Venda/M²', 
                                                 'Aluguel', 'Aluguel/M²','CTO Comum', 'CTO Comum/Venda', 'CTOcomum/M²', 'CTO Total', 'Desconto', 'Inadimplência']]
+    
+    config_num_loja = ProcTab.config_tabela(loja_sem_agrupamento) #pontuando tabela
 
-    st.dataframe(loja_sem_agrupamento, hide_index=True, use_container_width=True)
+    st.dataframe(loja_sem_agrupamento.style.applymap(ProcTab.colorir_var_venda, subset = ['% Venda AA']), hide_index=True, use_container_width=True, column_config=config_num_loja)
