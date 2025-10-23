@@ -29,12 +29,12 @@ def TabelaOriginal(emp=None):
     CompClassPos['VendaAA'] = CompClassPos.groupby('ID', sort=False)['Venda'].shift(12)
 
     CompClassPos['% Venda AA'] =  [(((v / vAA)-1)*100) if v != 0 and pd.notna(vAA) and vAA != 0 else np.nan for v, vAA in zip(CompClassPos['Venda'], CompClassPos['VendaAA'])]
-    CompClassPos = CompClassPos[~CompClassPos['Luc'].str.contains(r'[DMX]', na = False, case = False)]
+    CompClassPos = CompClassPos[~CompClassPos['Luc'].str.contains(r'[DMX]', na = False, case = False)] #Filtro de Midia/Estacionamento/Depósito
     CompClassPos['Aluguel'] = (
 
         CompClassPos['Aluguel Mínimo'] +
         CompClassPos['Aluguel Percentual'] +
-        CompClassPos['Aluguel Complementar'] 
+        CompClassPos['Aluguel Complementar']
         
     )
     CompClassPos['CTO Comum'] = CompClassPos['Aluguel'] + CompClassPos['Fundo Promoção'] + CompClassPos['Encargo Comum'] + CompClassPos['F.Reserva Enc.Comum']
@@ -268,7 +268,7 @@ def places(
     return df
 
 #### Pipe #####
-
+@st.cache_data
 def pipe_aquisicao():
     BASE_URL = "https://grupolgn.pipedrive.com/api/v1"
     API_TOKEN = "a24cc3c57ab15bbe8a1aee47e7ef1ddb002377ec"   # direto, sem env

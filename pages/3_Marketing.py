@@ -15,6 +15,35 @@ if 'data' in st.session_state:
   for key in global_widget_keys:
       if key in st.session_state:
           st.session_state[key] = st.session_state[key]
+    
+# ======= Funcoes
+          
+def titulo_aquisicao(texto):
+    html_titulo = f"""
+    <div style="
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, 'Noto Sans', sans-serif;
+        text-align: center;
+        font-size: 1.5em;
+        font-weight: 800;
+        background: linear-gradient(90deg, #6a85b6, #bac8e0);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-top: 10px;
+        margin-bottom: 5px;
+    ">
+        {texto}
+    </div>
+    """
+    return html_titulo
+def pct(part, whole):
+    return 0 if whole == 0 else round(100 * part / whole, 2)
+# função que chama sua API ou pipeline
+def atualizar_dados_pipe():
+    st.session_state.dados_pipe = ProcTab.pipe_aquisicao()
+#Armazenando dados do Pipedrive em sessão
+if "dados_pipe" not in st.session_state:
+    st.session_state.dados_pipe = ProcTab.pipe_aquisicao()
+# =============
 
 ## SIDE BAR ##
 st.sidebar.header('Filtros')
@@ -116,6 +145,8 @@ with tab_mkt:
 
 with tab_aquisicao:
     st.header("Aquisição")
+    colunas_aq1 , colunas_aq2, colunas_aq3 = st.columns([3.33,3.33,3.33])
+    st.html(titulo_aquisicao('Buscador de Leads 🚀'))
 
     # --- Inputs do usuário (Aquisição) ---
     # API key (preferir st.secrets; aqui usamos fallback)
@@ -200,5 +231,225 @@ with tab_aquisicao:
             with st.expander("Mapa"):
                 st.map(df_lugares.rename(columns={"lat": "latitude", "lng": "longitude"})[["latitude", "longitude"]])
     st.divider()
-    st.subheader("Dados do Pipe")
+    colA1 , colB1 = st.columns(2)
+    with colA1:
+        setor_radio = st.radio("Verificar funil comercial ou aquisição:",
+            options=['Aquisição', 'Comercial'], index = 1, key='funil_aq_radio', horizontal = True)
+    with colB1:
+        meta = st.number_input("Meta de Aquisições Mensal:", min_value=0, value=100, step=1, key='meta_aq_input')
     
+    dados_pipe = st.session_state.dados_pipe
+    dados_pipe['status'] = dados_pipe['status'].map({'open':'EM ABERTO', 'won':'GANHO', 'lost':'PERDA'})
+    dados_pipe['Data Aquisicao'] = dados_pipe.apply(lambda row: row['add_time'] if pd.isna(row['data_reuniao']) else row['data_reuniao'], axis=1)
+    
+    # dados Aquisição
+    dados_aq = dados_pipe.copy()
+    dados_aq = dados_aq[dados_aq['Data Aquisicao'] >= pd.to_datetime('2025-07-01')]
+    dados_aq = dados_aq[dados_aq['Funil de Origem'] != 'Comercial']
+    em_aberto_aq = dados_aq[dados_aq['Status Aquisicao'] == 'EM ABERTO']
+    ganhos_aq    = dados_aq[dados_aq['Status Aquisicao'] == 'GANHO']
+    perdas_aq    = dados_aq[dados_aq['Status Aquisicao'] == 'PERDA']
+    penultimo_bloco = 000
+    
+    #dados Comercial
+    dados_com = dados_pipe.copy()
+    dados_com = dados_com[dados_com['add_time'] >= pd.to_datetime('2025-07-01')]
+    dados_com = dados_com[dados_com['Funil de Origem'] == 'Comercial']
+    em_aberto_com = dados_com[dados_com['status'] == 'EM ABERTO']
+    ganhos_com    = dados_com[dados_com['status'] == 'GANHO']
+    perdas_com    = dados_com[dados_com['status'] == 'PERDA']
+    
+    if setor_radio == 'Aquisição':
+        total_leads     = len(dados_aq)                  # número total de leads Aquisicao
+        em_aberto       = len(em_aberto_aq)              # número total de leads Comercial
+        ganhos          = len(ganhos_aq)                 # leads que viraram vendas/ganhos
+        perdas          = len(perdas_aq)                 # leads perdidos
+        data_ganho_med  = (ganhos_aq['data_reuniao'] - ganhos_aq['add_time']).dropna().dt.days.mean() # cálculo do tempo até perda
+    
+    else:
+        total_leads     = len(dados_com)     
+        em_aberto       = len(em_aberto_com) 
+        ganhos          = len(ganhos_com)    
+        perdas          = len(perdas_com)    
+        data_ganho_med  = (ganhos_com['local_won_date'] - ganhos_com['add_time']).dropna().dt.days.mean()
+        
+    aberto_pct   = pct(em_aberto, total_leads)    # % de leads contatados
+    ganho_pct    = pct(ganhos, total_leads)       # % de leads ganhos
+    perda_pct    = pct(perdas, total_leads)       # % de leads perdidos
+    aberto_pct   = pct(em_aberto, total_leads)    # % de leads abertos
+    aberto_bar   = int(round(aberto_pct))
+    ganho_bar    = int(round(ganho_pct))
+    perda_bar    = int(round(perda_pct))
+    aberto_bar   = int(round(aberto_pct))
+
+    
+    html = f"""
+    <div class="wrap">
+    <div class="header">
+        <div class="title">Relatório de Leads</div>
+        <div class="subtitle">Resumo de desempenho e funil</div>
+    </div>
+
+    <div class="grid">
+        <!-- Card: Total Leads In. -->
+        <div class="card">
+        <div class="card-top">
+            <div class="label">Total de leads Aquisicao</div>
+            <div class="value xl">{total_leads}</div>
+        </div>
+        <div class="foot-note">{('Considerando funis de origem Outbound e Inbound, a partir de julho. Ganho contabilizado após reunião realizada.' if setor_radio == 'Aquisição' 
+        else 'Considerando o funil de origem "Comercial" a partir ed julho.')}</div>
+        </div>
+
+        <!-- Card: Ganhos -->
+        <div class="card">
+        <div class="card-top">
+            <div class="label">Ganhos</div>
+            <div class="value">{ganhos}</div>
+        </div>
+        <div class="meter"><span class="ok" style="width:{ganho_bar}%"></span></div>
+        <div class="meta">
+            <span class="pill ok">{ganho_pct}% do total</span>
+            <span class="pill glow">Tempo Médio para ganho: {data_ganho_med:.1f}d</span>
+        </div>
+        </div>
+        
+        <!-- Card: Perdas -->
+        <div class="card">
+        <div class="card-top">
+            <div class="label">Perdas</div>
+            <div class="value">{perdas}</div>
+        </div>
+        <div class="meter"><span class="warn" style="width:{perda_bar}%"></span></div>
+        <div class="meta">
+            <span class="pill warn">{perda_pct}% do total</span>
+        </div>
+        </div>
+
+        <!-- Card: Em aberto -->
+        <div class="card">
+        <div class="card-top">
+            <div class="label">Em aberto</div>
+            <div class="value">{em_aberto}</div>
+        </div>
+        <div class="meter"><span class="info" style="width:{aberto_bar}%"></span></div>
+        <div class="meta">
+            <span class="pill info">{aberto_pct}% do total</span>
+        </div>
+        </div>
+        
+        <!-- Card: ??? -->
+        <div class="card">
+        <div class="card-top">
+            <div class="label">???</div>
+            <div class="value">{penultimo_bloco}</div>
+        </div>
+        <div class="meter"><span class="warn" style="width:{penultimo_bloco}%"></span></div>
+        <div class="meta">
+            <span class="pill warn">{penultimo_bloco}% do total</span>
+        </div>
+        </div>
+
+        <!-- Card: Meta -->
+        <div class="card">
+        <div class="card-top">
+            <div class="label">Meta</div>
+            <div class="value">{meta}</div>
+        </div>
+        <span class="pill glow">Progresso: {("Selecione uma meta" if meta == None else round(ganhos/meta*100, 2))}%</span>
+        </div>
+    </div>
+    </div>
+
+    <style>
+    :root {{
+        --bg: #0f172a;          /* fundo escuro (slate-900) */
+        --panel: #111827;       /* painel (gray-900) */
+        --border: rgba(255,255,255,.06);
+        --text: #e5e7eb;        /* texto principal */
+        --muted:#9ca3af;        /* texto secundário */
+        --ok: #86efac;          /* verde pastel */
+        --warn:#fca5a5;         /* vermelho pastel */
+        --info:#93c5fd;         /* azul pastel */
+        --accent1: #6a85b6;     /* degrade sutil */
+        --accent2: #bac8e0;
+        --radius: 14px;
+    }}
+
+    *{{box-sizing:border-box}}
+    .wrap{{
+        max-width: 1100px; margin: 28px auto; padding: 0 16px;
+        color: var(--text); font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, 'Noto Sans', sans-serif;
+    }}
+    .header{{text-align:center; margin-bottom: 18px}}
+    .title{{
+        font-weight: 800; font-size: 2.0rem;
+        background: linear-gradient(90deg,var(--accent1),var(--accent2));
+        -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    }}
+    .subtitle{{color:var(--muted); font-size:.95rem; margin-top:4px}}
+
+    .grid{{
+        display:grid; gap:14px;
+        grid-template-columns: repeat(3, minmax(0,1fr));
+    }}
+    @media (max-width: 980px) {{ .grid{{ grid-template-columns: repeat(2, minmax(0,1fr)); }} }}
+    @media (max-width: 640px) {{ .grid{{ grid-template-columns: 1fr; }} }}
+
+    .card{{
+        background:
+        radial-gradient(800px 300px at 120% -20%, rgba(186,200,224,.08), transparent),
+        radial-gradient(800px 300px at -20% 120%, rgba(106,133,182,.08), transparent),
+        var(--panel);
+        border:1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 16px 16px 14px;
+        box-shadow: 0 10px 28px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
+    }}
+    .card.win{{
+        background:
+        radial-gradient(800px 300px at 120% -20%, rgba(186,200,224,.08), transparent),
+        radial-gradient(800px 300px at -20% 120%, rgba(106,133,182,.08), transparent),
+        #f1c40f;
+    }}
+    .card-top{{ display:flex; align-items:baseline; justify-content:space-between; gap:10px }}
+    .label{{ color:var(--muted); font-weight:600; letter-spacing:.02em }}
+    .value{{ font-size:1.8rem; font-weight:800 }}
+    .value.xl{{ font-size:2.4rem }}
+
+    .meter{{
+        position:relative; height:10px; margin-top:10px; margin-bottom:8px;
+        background: rgba(255,255,255,.05); border-radius:999px; overflow:hidden; border:1px solid var(--border);
+    }}
+    .meter > span{{
+        display:block; height:100%;
+        background: linear-gradient(90deg, var(--accent1), var(--accent2));
+    }}
+    .meter > span.ok{{ background: linear-gradient(90deg, #34d399, var(--ok)) }}
+    .meter > span.warn{{ background: linear-gradient(90deg, #fb7185, var(--warn)) }}
+    .meter > span.info{{ background: linear-gradient(90deg, #60a5fa, var(--info)) }}
+
+    .meta{{ display:flex; flex-wrap:wrap; gap:8px; margin-top:6px }}
+    .pill{{
+        padding:6px 10px; border-radius:999px; font-size:.85rem; font-weight:700; letter-spacing:.02em;
+        border:1px solid var(--border); background: rgba(255,255,255,.03); color:var(--text)
+    }}
+    .pill.ok{{ background: rgba(134,239,172,.12) }}
+    .pill.warn{{ background: rgba(252,165,165,.12) }}
+    .pill.info{{ background: rgba(147,197,253,.12) }}
+    .pill.neutral{{ background: rgba(255,255,255,.06) }}
+    .pill.glow{{
+        box-shadow: 0 0 0 3px rgba(186,200,224,.12), 0 8px 18px rgba(106,133,182,.18);
+    }}
+    .foot-note{{ color:var(--muted); font-size:.9rem; margin-top:6px }}
+    body{{ background: linear-gradient(180deg,#0b1220, var(--bg)); margin:0; }}
+    </style>
+    """
+    st.html(html)
+    coluna1, coluna2, coluna3 = st.columns([0.4,0.3,0.2])
+    with coluna2:
+        st.button("Mostrar Tabela")
+    with coluna3:
+        st.button("Atualizar Dados do Pipedrive", key='atualiza_dados_button', on_click=atualizar_dados_pipe)
+        st.caption(":red[Cuidado!] Usar muito esse botão pode consumir a cota mensal da API do Pipedrive. Recomendado usar uma ou duas vezes por dia.")
+    # st.dataframe(dados_pipe, use_container_width=True)
