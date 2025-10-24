@@ -37,12 +37,6 @@ def titulo_aquisicao(texto):
     return html_titulo
 def pct(part, whole):
     return 0 if whole == 0 else round(100 * part / whole, 2)
-# função que chama sua API ou pipeline
-def atualizar_dados_pipe():
-    st.session_state.dados_pipe = ProcTab.pipe_aquisicao()
-#Armazenando dados do Pipedrive em sessão
-if "dados_pipe" not in st.session_state:
-    st.session_state.dados_pipe = ProcTab.pipe_aquisicao()
 # =============
 
 ## SIDE BAR ##
@@ -236,9 +230,9 @@ with tab_aquisicao:
         setor_radio = st.radio("Verificar funil comercial ou aquisição:",
             options=['Aquisição', 'Comercial'], index = 1, key='funil_aq_radio', horizontal = True)
     with colB1:
-        meta = st.number_input("Meta de Aquisições Mensal:", min_value=0, value=100, step=1, key='meta_aq_input')
+        meta = st.number_input("Meta de Aquisições:", min_value=0, value=100, step=1, key='meta_aq_input')
     
-    dados_pipe = st.session_state.dados_pipe
+    dados_pipe = ProcTab.pipe_aquisicao().copy()
     dados_pipe['status'] = dados_pipe['status'].map({'open':'EM ABERTO', 'won':'GANHO', 'lost':'PERDA'})
     dados_pipe['Data Aquisicao'] = dados_pipe.apply(lambda row: row['add_time'] if pd.isna(row['data_reuniao']) else row['data_reuniao'], axis=1)
     
@@ -446,10 +440,8 @@ with tab_aquisicao:
     </style>
     """
     st.html(html)
-    coluna1, coluna2, coluna3 = st.columns([0.4,0.3,0.2])
+    coluna1, coluna2, coluna3 = st.columns([0.45,0.1,0.45])
     with coluna2:
-        st.button("Mostrar Tabela")
-    with coluna3:
-        st.button("Atualizar Dados do Pipedrive", key='atualiza_dados_button', on_click=atualizar_dados_pipe)
-        st.caption(":red[Cuidado!] Usar muito esse botão pode consumir a cota mensal da API do Pipedrive. Recomendado usar uma ou duas vezes por dia.")
+        st.button("Mostrar Tabela", use_container_width=True)
+
     # st.dataframe(dados_pipe, use_container_width=True)

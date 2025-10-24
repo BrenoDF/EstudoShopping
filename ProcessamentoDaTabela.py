@@ -13,7 +13,7 @@ path1 = 'Banco de dados.xlsx'
 pathFluxoVS = 'Controle Tesouraria Viashopping.xlsx'
 pathFluxoVB = 'Controle Tesouraria Viabrasil.xlsx'
 
-@st.cache_data
+@st.cache_data(ttl = 60*60*3) # Cache por 3 horas
 def TabelaOriginal(emp=None):
 # ------- Chamando o BD -------- #    
     with sqlite.connect('banco_de_dados.db') as conn:
@@ -268,7 +268,7 @@ def places(
     return df
 
 #### Pipe #####
-@st.cache_data
+@st.cache_data(ttl = 60*60*3) # Cache por 3 horas
 def pipe_aquisicao():
     BASE_URL = "https://grupolgn.pipedrive.com/api/v1"
     API_TOKEN = "a24cc3c57ab15bbe8a1aee47e7ef1ddb002377ec"   # direto, sem env
