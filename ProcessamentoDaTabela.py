@@ -19,6 +19,7 @@ def TabelaOriginal(emp=None):
     with sqlite.connect('banco_de_dados.db') as conn:
         query = "SELECT * FROM bd_lojas"
         CompClassPos = pd.read_sql(query, conn)
+        
     col_datas = ['Data', 'Data que entrou', 'Data que saiu']
     for col in col_datas:
         CompClassPos[col] = pd.to_datetime(CompClassPos[col], errors='coerce')
@@ -95,11 +96,14 @@ def TabelaOriginal(emp=None):
         DF_ApenasLojas[DF_ApenasLojas['Empreendimento'] == emp])
 
 def formata_numero(valor, prefixo = ''):
+    sinal = '-' if valor < 0 else ''
+    valor = abs(valor)
+    
     for unidade in ['', 'mil']:
-        if valor <1000:
-            return f"{prefixo}{valor:.2f} {unidade}"
+        if valor < 1000:
+            return f"{sinal}{prefixo}{valor:.2f} {unidade}"
         valor /= 1000
-    return f"{prefixo}{valor:.2f} milhões"
+    return f"{sinal}{prefixo}{valor:.2f} milhões"
 
 def separador_br(valor: float) -> str:
     return f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
@@ -478,3 +482,11 @@ def pipe_aquisicao():
     axis=1
     )
     return df_deals
+
+def vendas_diarias():
+    with sqlite.connect('banco_de_dados.db') as conn:
+        query = "SELECT * FROM vendas_diarias"
+        df_vendas = pd.read_sql(query, conn)
+        df_vendas['Data'] = pd.to_datetime(df_vendas['Data'], errors='coerce')
+    
+    return df_vendas

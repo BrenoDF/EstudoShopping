@@ -326,7 +326,7 @@ with tabMain:
   st.subheader("Dados de Fluxo")
 
 
-  colx, coly, colz = st.columns([0.4,0.15,0.4])
+  colx, coly = st.columns([0.8,0.2])
   inicioF, fimF = sliderIntervalo
   inicioF = pd.to_datetime(inicioF)
   fimF = pd.to_datetime(fimF)
@@ -347,13 +347,6 @@ with tabMain:
       value_vars=['Fluxo Pagante', 'Fluxo Mensalista', 'Fluxo Carência', 'Total Isenções'],
       var_name='Tipo',
       value_name='Valor'
-  )
-  fig = px.pie(
-      Pagantes_Fluxo,
-      values='Valor',
-      names='Tipo',
-      title='Fluxo Categórico Agregado (Necessário atualização)',
-      color_discrete_sequence=px.colors.qualitative.Plotly
   )
 
   meses_dict = {
@@ -424,22 +417,15 @@ with tabMain:
       st.metric('Média por mês', ProcTab.formata_numero(DF_FluxoFiltrado.groupby('Mês')['Fluxo de Pessoas'].sum().mean().astype(int)),
                 width="stretch",
                 border= True)
-      st.metric('Fluxo de Carros', ProcTab.formata_numero(DF_FluxoFiltrado['Fluxo de Carros'].sum().astype(int)),
+      st.metric('Fluxo de Carros Totais', ProcTab.formata_numero(DF_FluxoFiltrado['Fluxo de Carros'].sum().astype(int)),
                 width="stretch",
                 border= True)
       st.metric('Receita', ProcTab.formata_numero(DF_FluxoFiltrado['Receita Total Sistema'].sum()),
                 width="stretch",
                 border= True)
+
       
-  with colz:
-      st.plotly_chart(fig, use_container_width=True)
-      
-      
-      
-      
-      
-      
-      
+
 # ----------------------- ENTRADA E SAÍDA DE LOJAS ----------------------- #
 
   st.divider()
@@ -466,12 +452,6 @@ with tabMain:
   EntradaSaida = EntradaSaida[['Data', 'Entrou (Contagem)', 'Saiu (Contagem)', 'Entrou', 'Saiu']]
 
   st.dataframe(EntradaSaida, hide_index=True, use_container_width=True)
-
-
-
-
-
-
 
   # ----------------------- LOJAS CRÍTICAS ----------------------- #
   st.divider()

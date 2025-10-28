@@ -39,65 +39,9 @@ def pct(part, whole):
     return 0 if whole == 0 else round(100 * part / whole, 2)
 # =============
 
-## SIDE BAR ##
-st.sidebar.header('Filtros')
-emp = st.sidebar.radio("Selecione o Empreendimento",
-    options=['Viashopping', 'Viabrasil'], index = 0)
-
 # ------------------------------- Trazendo o DF -------------------------------- #
-DF_Fluxo, DFLojas = ProcTab.TabelaOriginal(emp)
-
-hoje = date.today()
-hoje = hoje.replace(day=1)
-
-sliderIntervalo = st.sidebar.date_input("Período",
-                     value = (date(2025,1,1),DFLojas['Data'].max()),
-                     min_value=date(2018,1,1),
-                     max_value=DFLojas['Data'].max(),
-                     format= "DD/MM/YYYY"
-)
-inicio, fim = sliderIntervalo
-inicio = inicio.replace(day=1)
-fim = fim.replace(day=1)
-inicio = pd.to_datetime(inicio)
-fim = pd.to_datetime(fim)
-classificacao_unica = DFLojas['Classificação'].unique().tolist()
-classificacao_inutil = ['Comodato', 'Depósito']
-default = [x for x in classificacao_unica if x not in classificacao_inutil]
-
-with st.sidebar.expander("Filtros Avançados", expanded=False):
-
-    ClassificacaoSelecionada = st.pills(
-            'Selecione as classificações que deseja visualizar',
-        options=classificacao_unica,
-        selection_mode= 'multi',
-        default= default
-    )
-
-    LadoSelecionado = st.segmented_control(
-        'Lado:',
-        options = ['Lado A', 'Lado B', 'Ambos'],
-        default = 'Ambos'
-    )
-
-    PisosSelecionados = st.pills(
-        'Selecione os pisos que deseja visualizar',
-        options = DFLojas['Piso'].dropna().unique().tolist(),
-        selection_mode = 'multi',
-        default = DFLojas['Piso'].dropna().unique().tolist()
-    )
-
-
-# ------------------------------- FILTRANDO O DF -------------------------------- #
-filtroSideBar = ((DFLojas['Classificação'].isin(ClassificacaoSelecionada)) &
-    (DFLojas['Piso'].isin(PisosSelecionados)) &
-    ((LadoSelecionado == 'Ambos')
-      |
-      (DFLojas['Lado']==LadoSelecionado)
-      ))
-filtroDataSelecionada = (DFLojas['Data'] >= inicio) & (DFLojas['Data'] <= fim)
-
-DFLojasAtual = DFLojas.loc[filtroSideBar & filtroDataSelecionada]
+DF_Fluxo, DFLojas = ProcTab.TabelaOriginal()
+df_vendas = ProcTab.vendas_diarias()
 
 ###########################
 
@@ -135,7 +79,81 @@ tab_mkt, tab_aquisicao = st.tabs(["Marketing", "Aquisição"])
 
 with tab_mkt:
     st.header("Marketing")
-    st.write("Em construção...")
+    st.subheader('Comparativo de campanhas')
+    col_filtro1, col_filtro2, col_filtro3 = st.columns(3)
+    with col_filtro1:
+        data_base = st.date_input("Data da campanha anterior:", 
+                                    value = (date(2025,1,1),DFLojas['Data'].max()),
+                                    min_value=date(2018,1,1),
+                                    max_value=DFLojas['Data'].max(),
+                                    format= "DD/MM/YYYY")
+    with col_filtro2:
+        data_comparativa = st.date_input("Data da campanha atual:", 
+                                            value = (date(2025,1,1),DFLojas['Data'].max()),
+                                            min_value=date(2018,1,1),
+                                            max_value=DFLojas['Data'].max(),
+                                            format= "DD/MM/YYYY")
+    with col_filtro3:
+        emp = st.radio('Empreendimento', ['Viashopping', 'Viabrasil'], horizontal=True)
+    
+    # ------------------------------- FILTRANDO O DF -------------------------------- #
+    if (len(data_base) < 2) | (len(data_comparativa) < 2):
+        st.error('É necessário colocar um intervalo de data nos dois periodos de campanha acima!', icon="🚨")
+    else:
+        
+        inicio_b, fim_b = [pd.to_datetime(d) for d in data_base]
+        inicio_c, fim_c = [pd.to_datetime(d) for d in data_comparativa]
+
+        def criar_df_ticket(df_vendas, df_fluxo,inicio, fim):
+            
+            df_filtrado_mask = (df_vendas['Data'] >= inicio) & (df_vendas['Data'] <= fim)
+            df_filtrado_mask_f = (df_fluxo['Data'] >= inicio) & (df_fluxo['Data'] <= fim)
+            
+            df_filtrado = df_vendas.loc[df_filtrado_mask]
+            df_filtrado = df_filtrado.groupby(['Data', 'Empreendimento'], as_index=False).sum()
+            df_filtrado = df_filtrado[['Data', 'Vendas', 'Empreendimento']]
+            
+            df_fluxo_filtrado = df_fluxo.loc[df_filtrado_mask_f]
+            df_fluxo_filtrado = df_fluxo_filtrado[['Data','Fluxo de Pessoas', 'Empreendimento']]
+            
+            df_ticket = pd.merge(df_filtrado,df_fluxo_filtrado, how = 'left', on =['Data', 'Empreendimento'])
+            df_ticket_final = df_ticket[['Data', 'Empreendimento', 'Vendas', 'Fluxo de Pessoas']]
+            df_ticket_final['Ticket'] = (df_ticket_final['Vendas']/df_ticket_final['Fluxo de Pessoas']).round(2)
+            return df_ticket_final
+        
+        df_data_base = criar_df_ticket(df_vendas, DF_Fluxo, inicio_b, fim_b)
+        df_data_comparativa = criar_df_ticket(df_vendas, DF_Fluxo, inicio_c, fim_c)
+        
+        dfs = [df_data_base, df_data_comparativa]
+        
+        df_data_base = df_data_base[df_data_base['Empreendimento'] == emp]
+        df_data_comparativa = df_data_comparativa[df_data_comparativa['Empreendimento'] == emp]
+        
+        config_col = ProcTab.config_tabela(df_data_base)
+        col_comp_fluxo1, col_comp_fluxo2, col_comp_fluxo3 = st.columns(3)
+        with col_comp_fluxo1:
+            st.dataframe(df_data_base, hide_index= True, column_config= config_col,
+                         column_order=['Data', 'Fluxo de Pessoas', 'Vendas', 'Ticket', 'Empreendimento'])
+        with col_comp_fluxo2:
+            st.dataframe(df_data_comparativa, hide_index= True, column_config= config_col, 
+                         column_order=['Data', 'Fluxo de Pessoas', 'Vendas', 'Ticket', 'Empreendimento'])
+        with col_comp_fluxo3:
+            ## Metricas:
+            total_fluxo_base = df_data_base['Fluxo de Pessoas'].sum()
+            total_fluxo_comparativa = df_data_comparativa['Fluxo de Pessoas'].sum()
+            dif_total_fluxo = total_fluxo_comparativa - total_fluxo_base
+            dif_total_fluxo_var = round((((total_fluxo_comparativa / total_fluxo_base) - 1) * 100),2)
+            total_venda_base = df_data_base['Vendas'].sum()
+            total_venda_comparativa = df_data_comparativa['Vendas'].sum()
+            dif_total_venda = ProcTab.formata_numero(total_venda_comparativa - total_venda_base)
+            dif_total_venda_var = round((((total_venda_comparativa / total_venda_base) - 1) * 100),2)
+            media_ticket_base = df_data_base['Ticket'].mean()
+            media_ticket_comparativa = round(df_data_comparativa['Ticket'].mean(),2)
+            dif_media_ticket_var = round((((media_ticket_comparativa / media_ticket_base) - 1) * 100),2)
+            
+            st.metric('Diferença de Fluxo:', f'{dif_total_fluxo} pessoas', delta = f'{dif_total_fluxo_var}%')
+            st.metric('Diferença de Vendas:', f'R${dif_total_venda}', delta = f'{dif_total_venda_var}%')
+            st.metric('Ticket médio:', f'R${media_ticket_comparativa}', delta = f'{dif_media_ticket_var}%')
 
 with tab_aquisicao:
     st.header("Aquisição")
@@ -372,7 +390,7 @@ with tab_aquisicao:
 
     *{{box-sizing:border-box}}
     .wrap{{
-        max-width: 1100px; margin: 28px auto; padding: 0 16px;
+        max-width: 1200px; margin: 28px auto; padding: 0 16px;
         color: var(--text); font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, 'Noto Sans', sans-serif;
     }}
     .header{{text-align:center; margin-bottom: 18px}}
@@ -440,8 +458,72 @@ with tab_aquisicao:
     </style>
     """
     st.html(html)
+    dados_pipe = dados_pipe[['id', 'title', 'stage_id', 'pipeline_id', 'add_time', 'status', 'lost_reason', 
+                             'close_time', 'local_won_date', 'local_close_date', 'origin', 'funil_origem', 'origem_lead', 
+                             'sub_origem', 'empreendimento', 'utm_content', 'reuniao_realizada', 'data_reuniao', 'persona',
+                             'utm_source', 'creator_name', 'user_name', 'owner_name', 'Funil de Origem', 'Status Aquisicao']]
     coluna1, coluna2, coluna3 = st.columns([0.45,0.1,0.45])
-    with coluna2:
-        st.button("Mostrar Tabela", use_container_width=True)
+    with st.expander("Tabela Completa de Leads"):
+            st.dataframe(dados_pipe, use_container_width=True, hide_index=True)
 
-    # st.dataframe(dados_pipe, use_container_width=True)
+    
+# CSS para metric
+
+st.markdown("""
+    <style>
+    /* Container da métrica */
+    div[data-testid="stMetric"] {
+        background-color: #f9f9f9;
+        border: 1px solid #e3e3e3;
+        border-radius: 12px;
+        padding: 15px 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        text-align: center;
+        transition: all 0.2s ease-in-out;
+        max-width: 300px;
+    }
+
+    /* Efeito hover leve */
+    div[data-testid="stMetric"]:hover {
+        background-color: #fdfdfd;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+        transform: translateY(-2px);
+    }
+
+    /* Título (label da métrica) */
+    div[data-testid="stMetric"] > label {
+        color: #555;
+        font-size: 0.9rem;
+        font-weight: 500;
+        margin-bottom: 6px;
+    }
+
+    /* Valor principal */
+    div[data-testid="stMetric"] > div[data-testid="stMetricValue"] {
+        font-size: 1.8rem;
+        font-weight: 600;
+        color: #222;
+    }
+
+    /* Delta (variação) */
+    div[data-testid="stMetric"] > div[data-testid="stMetricDelta"] {
+        font-size: 0.9rem;
+        font-weight: 500;
+        border-radius: 6px;
+        padding: 2px 6px;
+        margin-top: 6px;
+    }
+
+    /* Delta positivo */
+    div[data-testid="stMetric"] > div[data-testid="stMetricDelta"][style*="green"] {
+        background-color: rgba(46, 204, 113, 0.15);
+        color: #2ecc71 !important;
+    }
+
+    /* Delta negativo */
+    div[data-testid="stMetric"] > div[data-testid="stMetricDelta"][style*="red"] {
+        background-color: rgba(231, 76, 60, 0.15);
+        color: #e74c3c !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
