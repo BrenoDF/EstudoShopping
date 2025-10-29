@@ -452,6 +452,8 @@ with tabMain:
   EntradaSaida = EntradaSaida[['Data', 'Entrou (Contagem)', 'Saiu (Contagem)', 'Entrou', 'Saiu']]
 
   st.dataframe(EntradaSaida, hide_index=True, use_container_width=True)
+  
+
 
   # ----------------------- LOJAS CRÍTICAS ----------------------- #
   st.divider()
