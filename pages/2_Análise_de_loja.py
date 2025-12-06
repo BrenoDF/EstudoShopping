@@ -19,7 +19,7 @@ if 'data' in st.session_state:
 
 # ------------------------------- Trazendo o DF Completo -------------------------------- #
 
-empresas = ['Viashopping', 'Viabrasil']
+empresas = ['Empreendimento 1', 'Empreendimento 2']
 
 dfs_compclasspos = []
 dfs_fluxo = []

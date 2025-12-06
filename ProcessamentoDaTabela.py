@@ -10,8 +10,8 @@ from typing import Dict, Tuple, List
 
 # ------ CONSTRUÇÃO DA TABELA USADA -------- #
 path1 = 'Banco de dados.xlsx'
-pathFluxoVS = 'Controle Tesouraria Viashopping.xlsx'
-pathFluxoVB = 'Controle Tesouraria Viabrasil.xlsx'
+pathFluxoVS = 'Controle Tesouraria Emp 1.xlsx'
+pathFluxoVB = 'Controle Tesouraria Emp 2.xlsx'
 
 @st.cache_data(ttl = 60*60*3) # Cache por 3 horas
 def TabelaOriginal(emp=None):
@@ -67,8 +67,8 @@ def TabelaOriginal(emp=None):
     df_vb = pd.read_excel(pathFluxoVB)
     df_vs = pd.read_excel(pathFluxoVS)
 
-    df_vb['Empreendimento'] =  'Viabrasil'
-    df_vs['Empreendimento'] =  'Viashopping'
+    df_vb['Empreendimento'] =  'Empreendimento 2'
+    df_vs['Empreendimento'] =  'Empreendimento 1'
 
     df_vb = df_vb[['Data','Mês','Ano', 'Fluxo Total', 'Receita Total Sistema', 'Fluxo Pagante', 'Fluxo Mensalista', 'Fluxo Carência', 'Total Isenções', 'Empreendimento']]
     df_vs = df_vs[['Data','Mês','Ano', 'Fluxo Total', 'Receita Total Sistema', 'Fluxo Pagante', 'Fluxo Mensalista', 'Fluxo Carência', 'Total Isenções', 'Empreendimento']]

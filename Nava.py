@@ -22,7 +22,7 @@ if 'data' in st.session_state:
 ## SIDE BAR ##
 st.sidebar.header('Filtros')
 emp = st.sidebar.radio("Selecione o Empreendimento",
-    options=['Viashopping', 'Viabrasil'], index = 0)
+    options=['Empreendimento 1', 'Empreendimento 2'], index = 0)
 
 sss = st.sidebar.toggle("Vendas SSS",
     value=False,

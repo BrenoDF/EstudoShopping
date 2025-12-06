@@ -163,8 +163,6 @@ with tab_aquisicao:
     # --- Inputs do usuário (Aquisição) ---
     # API key (preferir st.secrets; aqui usamos fallback)
     default_key = st.secrets.get("RAPIDAPI_KEY", "")
-    api_key = st.text_input("RapidAPI Key", type="password", value=default_key,
-                            help="Recomendado: colocar em st.secrets['RAPIDAPI_KEY'].")
 
     # escolha de locais base (usa seu dict todos_locais definido acima)
     locais_escolhidos = st.multiselect(
@@ -204,7 +202,7 @@ with tab_aquisicao:
         if not categorias:
             st.info("Informe ao menos uma categoria.")
             st.stop()
-        if not api_key:
+        if not default_key:
             st.error("Informe sua RapidAPI Key.")
             st.stop()
 
@@ -214,7 +212,7 @@ with tab_aquisicao:
             locais_escolhidos=locais_escolhidos,
             categorias=categorias,
             todos_locais=todos_locais,
-            api_key=api_key,
+            api_key=default_key,
             radius_metros=radius_metros,
             grid_offset_graus=grid_offset_graus,
             grid_halfspan=grid_halfspan,
