@@ -7,9 +7,9 @@ from datetime import date
 
 # Configurações de página
 st.set_page_config(layout="wide",
-page_title= 'Relatório Nava',
+page_title= 'Comparativo de Lojas',
 initial_sidebar_state="collapsed")
-st.logo('Imagens/NAVA-preta.png', icon_image='Imagens/NAVA-preta.png', size='large')
+st.logo('Imagens/logo.png', icon_image='Imagens/logo.png', size='large')
 global_widget_keys = ["data"]
 if 'data' in st.session_state:
   for key in global_widget_keys:

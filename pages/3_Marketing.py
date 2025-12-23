@@ -7,9 +7,9 @@ import io
 
 # Configurações de página
 st.set_page_config(layout="wide",
-page_title= 'Análise de CTO',
+page_title= 'Marketing',
 initial_sidebar_state="collapsed")
-st.logo('Imagens/NAVA-preta.png', icon_image='Imagens/NAVA-preta.png', size='large')
+st.logo('Imagens/logo.png', icon_image='Imagens/logo.png', size='large')
 global_widget_keys = ["data"]
 if 'data' in st.session_state:
   for key in global_widget_keys:
@@ -94,7 +94,7 @@ with tab_mkt:
                                             max_value=DFLojas['Data'].max(),
                                             format= "DD/MM/YYYY")
     with col_filtro3:
-        emp = st.radio('Empreendimento', ['Viashopping', 'Viabrasil'], horizontal=True)
+        emp = st.radio('Empreendimento', ['Empreendimento 1', 'Empreendimento 2'], horizontal=True)
     
     # ------------------------------- FILTRANDO O DF -------------------------------- #
     if (len(data_base) < 2) | (len(data_comparativa) < 2):

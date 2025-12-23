@@ -7,9 +7,9 @@ from dateutil.relativedelta import relativedelta
 
 # Configurações de página
 st.set_page_config(layout="wide",
-page_title= 'Relatório Nava',
+page_title= 'Relatório de Performance',
 initial_sidebar_state="collapsed")
-st.logo('Imagens/NAVA-preta.png', icon_image='Imagens/NAVA-preta.png', size='large')
+st.logo('Imagens/logo.png', icon_image='Imagens/logo.png', size='large')
 global_widget_keys = ["data"]
 if 'data' in st.session_state:
   for key in global_widget_keys:

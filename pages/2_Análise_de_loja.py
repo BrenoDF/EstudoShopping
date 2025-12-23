@@ -10,7 +10,7 @@ pd.options.display.float_format = '{:.2f}'.format
 st.set_page_config(layout="wide",
 page_title= 'Análise de Loja',
 initial_sidebar_state="collapsed")
-st.logo('Imagens/NAVA-preta.png', icon_image='Imagens/NAVA-preta.png', size='large')
+st.logo('Imagens/logo.png', icon_image='Imagens/logo.png', size='large')
 global_widget_keys = ["data"]
 if 'data' in st.session_state:
   for key in global_widget_keys:
