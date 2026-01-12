@@ -2,10 +2,10 @@
 *Página de dashboards com o intuito de realizar estudos para um empreendimento de shopping center. Por Breno Duarte F.*
 
 ## Do que se trata?
-Se trata de um dashboard feito em Python com auxílio da biblioteca _Streamlit_. O intuito é demonstrar KPIs e gráficos que em outras ferramentas de BI do mercado não são capazes ou exigem muito para ser feito.
+Se trata de um dashboard feito em Python com auxílio da biblioteca _Streamlit_. O intuito é demonstrar KPIs e dashboards que em outras ferramentas de BI do mercado não são capazes ou exigem demais para serem feitos.
 
 ## O que o relatório entrega?
-O relatório foi pensado para agilizar a obtenção e tomada de decisão através dos dados gerados de determinados setores.
+O relatório foi pensado para agilizar a obtenção de dados e a tomada de decisão através dos resultados obtidos para determinados setores.
 No relatório inicial teremos métricas de:
 - Vendas Totais
 - Vendas por segmento
@@ -28,6 +28,6 @@ Análise de loja:
 <img width="1882" height="1019" alt="Analise da operação 195" src="https://github.com/user-attachments/assets/3bcf8e44-698b-41ab-81a2-3db8ed2da4c3" />
 
 ## Os dados
-Dados fictícios seguindo uma lógica de dados reais do mercado, tratados e armazenados via _SQLite3_, e todo manuseio feito com _Pandas_.
+Os dados são fictícios seguindo uma lógica de dados reais do mercado, tratados e armazenados via _SQLite3_, e todo manuseio feito com _Pandas_. Lembrando que também foi utilizado _Streamlit_ e para os dashboards foi utilizado a biblioteca _Plotly_.
 
 
