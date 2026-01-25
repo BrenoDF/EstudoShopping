@@ -36,9 +36,9 @@ with comparativo_1:
 
         sliderIntervalo = st.sidebar.date_input("Período",
                      key = 'data',
-                     value = (date(2025,1,1),(pd.Timestamp(date.today()) - pd.offsets.MonthEnd(1))),
+                     value = (date(2025,1,1), date(2025,12,31)),
                      min_value= date(2018,1,1),
-                     max_value=(DFLojas['Data'].max()) + pd.offsets.MonthEnd(0),
+                     max_value=date(2025,12,31),
                      format= "DD/MM/YYYY"
                      )
         inicio, fim = sliderIntervalo

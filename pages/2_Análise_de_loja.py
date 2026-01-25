@@ -63,11 +63,11 @@ hoje = hoje.replace(day=1)
 
 sliderIntervalo = st.sidebar.date_input("Período",
                      key = 'data',
-                     value = (date(2025,1,1),(pd.Timestamp(date.today()) - pd.offsets.MonthEnd(1))),
+                     value = (date(2025,1,1), date(2025,12,31)),
                      min_value= date(2018,1,1),
-                     max_value=(df_final_apenaslojas['Data'].max()) + pd.offsets.MonthEnd(0),
+                     max_value=date(2025,12,31),
                      format= "DD/MM/YYYY"
-)
+                     )
 inicio, fim = sliderIntervalo
 inicio = pd.to_datetime(inicio)
 fim = pd.to_datetime(fim)
